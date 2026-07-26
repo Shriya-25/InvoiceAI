@@ -1,6 +1,7 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { PageLoader } from './components/ui/LoadingSpinner';
+import LandingPage from './pages/LandingPage';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import InvoiceList from './pages/InvoiceList';
@@ -35,7 +36,10 @@ export default function App() {
     <AuthProvider>
       <Router>
         <Routes>
-          {/* Public Routes */}
+          {/* Landing Page */}
+          <Route path="/" element={<LandingPage />} />
+
+          {/* Public Authentication Route */}
           <Route path="/login" element={
             <PublicRoute>
               <Login />
@@ -97,8 +101,8 @@ export default function App() {
             </ProtectedRoute>
           } />
 
-          {/* Catch-all redirect to Dashboard */}
-          <Route path="*" element={<Navigate to="/dashboard" replace />} />
+          {/* Catch-all redirect */}
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
         <Toaster position="top-right" toastOptions={{ duration: 3000 }} />
       </Router>
