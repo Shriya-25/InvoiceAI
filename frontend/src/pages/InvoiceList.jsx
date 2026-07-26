@@ -124,14 +124,14 @@ export default function InvoiceList() {
                 onClick={() => setTab(t)}
                 className={`flex items-center gap-1.5 px-4 py-2.5 text-sm font-semibold border-b-2 transition-all whitespace-nowrap ${
                   tab === t
-                    ? 'border-[#2563EB] text-[#2563EB]'
+                    ? 'border-[#1A998F] text-[#1A998F]'
                     : 'border-transparent text-[#6B7280] hover:text-[#0F1115]'
                 }`}
               >
                 {t}
                 {tabCounts[t] > 0 && (
                   <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-bold ${
-                    tab === t ? 'bg-[#EFF4FF] text-[#2563EB]' : 'bg-[#F3F4F6] text-[#9CA3AF]'
+                    tab === t ? 'bg-[#E6F4F3] text-[#1A998F]' : 'bg-[#F3F4F6] text-[#9CA3AF]'
                   }`}>
                     {tabCounts[t]}
                   </span>
@@ -200,8 +200,8 @@ export default function InvoiceList() {
                     className="grid grid-cols-[auto_1fr_140px_120px_110px_48px] gap-4 items-center px-5 py-3.5 border-b border-[#F3F4F6] last:border-0 hover:bg-[#FAFAFA] transition-colors group cursor-pointer"
                     onClick={() => navigate(`/invoices/${inv.id}`)}
                   >
-                    <div className="w-9 h-9 rounded-xl bg-[#EFF4FF] flex items-center justify-center">
-                      <FileText size={15} className="text-[#2563EB]" />
+                    <div className="w-9 h-9 rounded-xl bg-[#E6F4F3] flex items-center justify-center">
+                      <FileText size={15} className="text-[#1A998F]" />
                     </div>
                     <div>
                       <p className="text-sm font-bold text-[#0F1115]">{inv.invoiceNumber}</p>

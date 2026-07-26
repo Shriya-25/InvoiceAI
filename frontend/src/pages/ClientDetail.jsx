@@ -40,7 +40,7 @@ export default function ClientDetail() {
     return (
       <AppLayout>
         <div className="flex items-center justify-center h-64">
-          <div className="w-8 h-8 border-4 border-[#EFF4FF] border-t-[#2563EB] rounded-full animate-spin-slow" />
+          <div className="w-8 h-8 border-4 border-[#E6F4F3] border-t-[#1A998F] rounded-full animate-spin-slow" />
         </div>
       </AppLayout>
     );
@@ -164,7 +164,7 @@ export default function ClientDetail() {
                         to={`/invoices/${inv.id}`}
                         className="grid grid-cols-[1fr_120px_100px_100px] gap-4 items-center px-5 py-3.5 border-b border-[#F3F4F6] last:border-0 hover:bg-[#FAFAFA] transition-colors"
                       >
-                        <span className="text-sm font-semibold text-[#2563EB] hover:underline">{inv.invoiceNumber}</span>
+                        <span className="text-sm font-semibold text-[#1A998F] hover:underline">{inv.invoiceNumber}</span>
                         <span className="text-sm font-bold text-[#0F1115]">{formatCurrency(calcTotal(inv), inv.currency)}</span>
                         <span className="text-xs text-[#6B7280]">{formatDate(inv.dueDate)}</span>
                         <Badge status={status} />

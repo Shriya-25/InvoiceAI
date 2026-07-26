@@ -8,15 +8,15 @@ export default {
     extend: {
       colors: {
         primary: {
-          DEFAULT: '#2563EB',
-          hover: '#1D4ED8',
-          tint: '#EFF4FF',
+          DEFAULT: '#1A998F',
+          hover: '#187F87',
+          tint: '#E6F4F3',
         },
         sidebar: {
-          DEFAULT: '#0F1115',
-          active: '#1C2027',
+          DEFAULT: '#102E3C',
+          active: '#155665',
         },
-        surface: '#F7F9FC',
+        surface: '#F4F7F6',
         success: '#16A34A',
         warning: '#D97706',
         danger: '#DC2626',

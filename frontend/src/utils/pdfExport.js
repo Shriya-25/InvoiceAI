@@ -8,8 +8,8 @@ export async function exportInvoicePDF(invoice, profile = {}) {
   const margin = 16;
   let y = margin;
 
-  const primary = [37, 99, 235];
-  const textDark = [15, 17, 21];
+  const primary = [26, 153, 143]; // #1A998F
+  const textDark = [16, 46, 60];   // #102E3C
   const textMid = [107, 114, 128];
   const borderColor = [229, 231, 235];
 
@@ -36,7 +36,7 @@ export async function exportInvoicePDF(invoice, profile = {}) {
   setFont(20, 'bold', [255, 255, 255]);
   doc.text(profile.businessName || 'Your Business', margin, 16);
 
-  setFont(8, 'normal', [191, 219, 254]);
+  setFont(8, 'normal', [230, 244, 243]);
   if (profile.address) doc.text(profile.address, margin, 22);
   if (profile.gstNumber) doc.text(`GST: ${profile.gstNumber}`, margin, 27);
   if (profile.email) doc.text(profile.email, margin, 32);
@@ -44,7 +44,7 @@ export async function exportInvoicePDF(invoice, profile = {}) {
   // INVOICE label top-right
   setFont(22, 'bold', [255, 255, 255]);
   doc.text('INVOICE', W - margin, 16, { align: 'right' });
-  setFont(9, 'normal', [191, 219, 254]);
+  setFont(9, 'normal', [230, 244, 243]);
   doc.text(`#${invoice.invoiceNumber}`, W - margin, 23, { align: 'right' });
 
   y = 48;
@@ -83,7 +83,7 @@ export async function exportInvoicePDF(invoice, profile = {}) {
   y += 34;
 
   // Items table header
-  rect(margin, y, W - margin * 2, 8, [248, 250, 252]);
+  rect(margin, y, W - margin * 2, 8, [244, 247, 246]);
   line(margin, y + 8, W - margin, y + 8, borderColor);
   setFont(7, 'bold', textMid);
   doc.text('DESCRIPTION', margin + 3, y + 5.5);
@@ -117,9 +117,8 @@ export async function exportInvoicePDF(invoice, profile = {}) {
 
   const totals = [
     ['Subtotal', subtotal],
-    ...(invoice.discount > 0 ? [`Discount (${invoice.discount}%)`, -discount] : []).map ? [] : [],
-    ...(invoice.taxPercent > 0 ? [[`Tax (${invoice.taxPercent}%)`, tax]] : []),
     ...(invoice.discount > 0 ? [[`Discount (${invoice.discount}%)`, -discount]] : []),
+    ...(invoice.taxPercent > 0 ? [[`Tax (${invoice.taxPercent}%)`, tax]] : []),
   ];
 
   let ty = y;

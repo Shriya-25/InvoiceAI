@@ -9,11 +9,23 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const unsub = onAuthStateChanged(auth, (u) => {
-      setUser(u);
-      setLoading(false);
-    });
-    return unsub;
+    if (window.IS_MOCKED_FIREBASE) {
+      const updateMockUser = () => {
+        const stored = localStorage.getItem('invoice_ai_mock_user');
+        setUser(stored ? JSON.parse(stored) : null);
+        setLoading(false);
+      };
+      
+      updateMockUser();
+      window.addEventListener('mock_auth_changed', updateMockUser);
+      return () => window.removeEventListener('mock_auth_changed', updateMockUser);
+    } else {
+      const unsub = onAuthStateChanged(auth, (u) => {
+        setUser(u);
+        setLoading(false);
+      });
+      return unsub;
+    }
   }, []);
 
   return (

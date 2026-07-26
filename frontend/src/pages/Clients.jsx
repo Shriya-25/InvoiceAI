@@ -166,8 +166,8 @@ export default function Clients() {
                   onClick={() => navigate(`/clients/${c.id}`)}
                 >
                   <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-lg bg-[#EFF4FF] flex items-center justify-center">
-                      <User size={14} className="text-[#2563EB]" />
+                    <div className="w-8 h-8 rounded-lg bg-[#E6F4F3] flex items-center justify-center">
+                      <User size={14} className="text-[#1A998F]" />
                     </div>
                     <span className="text-sm font-semibold text-[#0F1115]">{c.name}</span>
                   </div>

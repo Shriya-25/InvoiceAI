@@ -41,11 +41,11 @@ export default function Login() {
   const set = (k) => (e) => setForm(f => ({ ...f, [k]: e.target.value }));
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#EFF4FF] via-white to-[#F7F9FC] flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-[#E6F4F3] via-white to-[#F4F7F6] flex items-center justify-center p-4">
       {/* Background decoration */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute -top-40 -right-40 w-96 h-96 rounded-full bg-[#2563EB]/8 blur-3xl" />
-        <div className="absolute -bottom-40 -left-40 w-96 h-96 rounded-full bg-[#2563EB]/5 blur-3xl" />
+        <div className="absolute -top-40 -right-40 w-96 h-96 rounded-full bg-[#1A998F]/10 blur-3xl" />
+        <div className="absolute -bottom-40 -left-40 w-96 h-96 rounded-full bg-[#1A998F]/5 blur-3xl" />
       </div>
 
       <div className="relative w-full max-w-md animate-fade-in">
@@ -53,10 +53,10 @@ export default function Login() {
         <div className="card p-8">
           {/* Brand */}
           <div className="text-center mb-8">
-            <div className="w-14 h-14 rounded-2xl bg-[#2563EB] flex items-center justify-center mx-auto mb-4 shadow-lg shadow-blue-500/30">
+            <div className="w-14 h-14 rounded-2xl bg-[#1A998F] flex items-center justify-center mx-auto mb-4 shadow-lg shadow-teal-500/30">
               <Zap size={24} className="text-white" fill="white" />
             </div>
-            <h1 className="text-2xl font-bold text-[#0F1115] mb-1">InvoiceAI</h1>
+            <h1 className="text-2xl font-bold text-[#102E3C] mb-1">InvoiceAI</h1>
             <p className="text-sm text-[#6B7280]">
               {mode === 'signin' ? 'Sign in to your account' : 'Create your free account'}
             </p>
@@ -74,10 +74,10 @@ export default function Login() {
             onClick={handleGoogle}
             disabled={!!loading}
             id="btn-google-signin"
-            className="w-full flex items-center justify-center gap-3 px-4 py-3 border-2 border-[#E5E7EB] rounded-xl font-semibold text-sm text-[#0F1115] bg-white hover:bg-[#F7F9FC] hover:border-[#D1D5DB] transition-all mb-4 disabled:opacity-50"
+            className="w-full flex items-center justify-center gap-3 px-4 py-3 border-2 border-[#E5E7EB] rounded-xl font-semibold text-sm text-[#102E3C] bg-white hover:bg-[#F4F7F6] hover:border-[#C4CFCE] transition-all mb-4 disabled:opacity-50"
           >
             {loading === 'google' ? (
-              <span className="w-5 h-5 border-2 border-[#E5E7EB] border-t-[#2563EB] rounded-full animate-spin-slow" />
+              <span className="w-5 h-5 border-2 border-[#E5E7EB] border-t-[#1A998F] rounded-full animate-spin-slow" />
             ) : (
               <svg width="20" height="20" viewBox="0 0 24 24">
                 <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
@@ -166,7 +166,7 @@ export default function Login() {
             </span>
             <button
               onClick={() => setMode(m => m === 'signin' ? 'signup' : 'signin')}
-              className="text-sm font-semibold text-[#2563EB] hover:text-[#1D4ED8] transition-colors"
+              className="text-sm font-semibold text-[#1A998F] hover:text-[#187F87] transition-colors"
             >
               {mode === 'signin' ? 'Sign up' : 'Sign in'}
             </button>
@@ -178,7 +178,7 @@ export default function Login() {
               id="btn-guest"
               onClick={handleGuest}
               disabled={!!loading}
-              className="w-full text-center text-sm text-[#6B7280] hover:text-[#0F1115] transition-colors py-2 rounded-lg hover:bg-[#F7F9FC] disabled:opacity-50"
+              className="w-full text-center text-sm text-[#6B7280] hover:text-[#102E3C] transition-colors py-2 rounded-lg hover:bg-[#F4F7F6] disabled:opacity-50"
             >
               {loading === 'guest' ? (
                 <span className="inline-block w-3 h-3 border-2 border-[#D1D5DB] border-t-[#6B7280] rounded-full animate-spin-slow mr-1" />

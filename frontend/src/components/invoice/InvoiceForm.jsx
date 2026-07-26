@@ -55,7 +55,7 @@ export default function InvoiceForm() {
 
       {/* Billed To */}
       <section>
-        <h3 className="text-xs font-bold text-[#2563EB] uppercase tracking-widest mb-3">Billed To</h3>
+        <h3 className="text-xs font-bold text-[#1A998F] uppercase tracking-widest mb-3">Billed To</h3>
         <div className="flex flex-col gap-3">
           <div className="flex flex-col gap-1">
             <label className="text-xs font-semibold text-[#6B7280] uppercase tracking-wide">Client Name</label>
@@ -84,7 +84,7 @@ export default function InvoiceForm() {
 
       {/* Line Items */}
       <section>
-        <h3 className="text-xs font-bold text-[#2563EB] uppercase tracking-widest mb-3">Line Items</h3>
+        <h3 className="text-xs font-bold text-[#1A998F] uppercase tracking-widest mb-3">Line Items</h3>
         {/* Header */}
         <div className="grid grid-cols-[1fr_70px_100px_100px_36px] gap-2 mb-1 px-0">
           {['Description', 'Qty', 'Rate', 'Amount', ''].map((h) => (
@@ -100,7 +100,7 @@ export default function InvoiceForm() {
           type="button"
           onClick={addItem}
           id="btn-add-line-item"
-          className="mt-3 flex items-center gap-1.5 text-sm font-semibold text-[#2563EB] hover:text-[#1D4ED8] transition-colors"
+          className="mt-3 flex items-center gap-1.5 text-sm font-semibold text-[#1A998F] hover:text-[#187F87] transition-colors"
         >
           <Plus size={16} /> Add Line Item
         </button>
@@ -133,7 +133,7 @@ export default function InvoiceForm() {
       </section>
 
       {/* Totals */}
-      <section className="bg-[#F7F9FC] rounded-xl p-4 border border-[#E5E7EB]">
+      <section className="bg-[#F4F7F6] rounded-xl p-4 border border-[#E5E7EB]">
         <div className="flex flex-col gap-2">
           <div className="flex justify-between text-sm text-[#6B7280]">
             <span>Subtotal</span>
@@ -148,12 +148,12 @@ export default function InvoiceForm() {
           {invoice.discount > 0 && (
             <div className="flex justify-between text-sm text-[#6B7280]">
               <span>Discount ({invoice.discount}%)</span>
-              <span className="font-medium text-[#DC2626]">−{formatCurrency(discount, invoice.currency)}</span>
+              <span className="text-[#DC2626]">−{formatCurrency(discount, invoice.currency)}</span>
             </div>
           )}
           <div className="flex justify-between pt-2 border-t border-[#E5E7EB]">
             <span className="font-bold text-[#0F1115]">Total</span>
-            <span className="text-lg font-bold text-[#2563EB]">{formatCurrency(total, invoice.currency)}</span>
+            <span className="text-lg font-bold text-[#1A998F]">{formatCurrency(total, invoice.currency)}</span>
           </div>
         </div>
       </section>

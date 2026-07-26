@@ -34,17 +34,17 @@ export default function Sidebar() {
   const initials = displayName.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
 
   return (
-    <aside className="fixed top-0 left-0 h-screen w-60 bg-[#0F1115] flex flex-col z-40 select-none">
+    <aside className="fixed top-0 left-0 h-screen w-60 bg-[#102E3C] flex flex-col z-40 select-none">
       {/* Logo */}
-      <div className="px-5 py-5 border-b border-white/5">
+      <div className="px-5 py-5 border-b border-white/10">
         <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-lg bg-[#2563EB] flex items-center justify-center shadow-lg shadow-blue-500/30">
+          <div className="w-8 h-8 rounded-lg bg-[#1A998F] flex items-center justify-center shadow-lg shadow-teal-900/30">
             <Zap size={16} className="text-white" fill="white" />
           </div>
           <div>
             <span className="text-white font-bold text-base tracking-tight">InvoiceAI</span>
             {user?.isAnonymous && (
-              <span className="block text-[10px] text-amber-400 font-medium">Guest Mode</span>
+              <span className="block text-[10px] text-teal-300 font-medium">Guest Mode</span>
             )}
           </div>
         </div>
@@ -52,7 +52,7 @@ export default function Sidebar() {
 
       {/* Nav */}
       <nav className="flex-1 px-3 py-4 flex flex-col gap-0.5 overflow-y-auto">
-        <p className="text-[10px] font-semibold text-white/25 uppercase tracking-widest px-3 mb-2">Menu</p>
+        <p className="text-[10px] font-semibold text-white/40 uppercase tracking-widest px-3 mb-2">Menu</p>
         {NAV_ITEMS.map(({ to, icon: Icon, label }) => (
           <NavLink
             key={to}
@@ -63,9 +63,9 @@ export default function Sidebar() {
           >
             {({ isActive }) => (
               <>
-                <Icon size={18} className={`sidebar-icon shrink-0 transition-colors ${isActive ? 'text-[#2563EB]' : 'text-white/40 group-hover:text-white/70'}`} />
+                <Icon size={18} className={`sidebar-icon shrink-0 transition-colors ${isActive ? 'text-[#1A998F]' : 'text-[#C4CFCE]/70 group-hover:text-white'}`} />
                 <span className="flex-1">{label}</span>
-                {isActive && <ChevronRight size={14} className="text-[#2563EB]/60" />}
+                {isActive && <ChevronRight size={14} className="text-[#1A998F]" />}
               </>
             )}
           </NavLink>
@@ -73,9 +73,9 @@ export default function Sidebar() {
       </nav>
 
       {/* User footer */}
-      <div className="px-3 py-4 border-t border-white/5">
+      <div className="px-3 py-4 border-t border-white/10">
         <div className="flex items-center gap-3 px-2 py-2 rounded-lg mb-2">
-          <div className="w-8 h-8 rounded-full bg-[#2563EB] flex items-center justify-center shrink-0">
+          <div className="w-8 h-8 rounded-full bg-[#1A998F] flex items-center justify-center shrink-0">
             {user?.photoURL ? (
               <img src={user.photoURL} alt={initials} className="w-8 h-8 rounded-full object-cover" />
             ) : (
@@ -85,13 +85,13 @@ export default function Sidebar() {
           <div className="flex-1 min-w-0">
             <p className="text-sm font-semibold text-white truncate">{displayName}</p>
             {!user?.isAnonymous && user?.email && (
-              <p className="text-[11px] text-white/40 truncate">{user.email}</p>
+              <p className="text-[11px] text-[#C4CFCE]/70 truncate">{user.email}</p>
             )}
           </div>
         </div>
         <button
           onClick={handleLogout}
-          className="sidebar-item w-full hover:!text-red-400 hover:!bg-red-500/10"
+          className="sidebar-item w-full hover:!text-red-300 hover:!bg-red-500/20"
         >
           <LogOut size={16} className="shrink-0" />
           <span>Sign Out</span>

@@ -5,18 +5,11 @@ import { generateDescriptionAI, suggestTermsAI, generateNotesAI, generateEmailAI
 import toast from 'react-hot-toast';
 
 const TOOLS = [
-  { id: 'description', label: 'Description Generator', icon: Type, color: 'purple', desc: 'Convert rough work notes into a polished service statement.' },
-  { id: 'terms', label: 'Payment Terms Suggester', icon: Clock, color: 'blue', desc: 'Determine professional credit conditions for client profiles.' },
+  { id: 'description', label: 'Description Generator', icon: Type, color: 'teal', desc: 'Convert rough work notes into a polished service statement.' },
+  { id: 'terms', label: 'Payment Terms Suggester', icon: Clock, color: 'teal', desc: 'Determine professional credit conditions for client profiles.' },
   { id: 'notes', label: 'Notes Generator', icon: FileCheck, color: 'green', desc: 'Generate polite notes or footer reminders for bank receipts.' },
   { id: 'email', label: 'Email Covering Letter', icon: Mail, color: 'indigo', desc: 'Create copy-ready notification emails for sending invoices.' },
 ];
-
-const COLOR_MAP = {
-  purple: 'bg-purple-50 text-purple-700 border-purple-200 focus:ring-purple-200',
-  blue: 'bg-blue-50 text-blue-700 border-blue-200 focus:ring-blue-200',
-  green: 'bg-green-50 text-green-700 border-green-200 focus:ring-green-200',
-  indigo: 'bg-indigo-50 text-indigo-700 border-indigo-200 focus:ring-indigo-200',
-};
 
 export default function AIAssistant() {
   const [activeTool, setActiveTool] = useState('description');
@@ -62,11 +55,11 @@ export default function AIAssistant() {
     <AppLayout>
       <div className="animate-fade-in max-w-4xl mx-auto">
         <div className="mb-6 flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-r from-purple-600 to-blue-600 flex items-center justify-center">
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-r from-[#1A998F] to-[#155665] flex items-center justify-center">
             <Sparkles size={20} className="text-white" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-[#0F1115]">AI Assistant Playground</h1>
+            <h1 className="text-2xl font-bold text-[#102E3C]">AI Assistant Playground</h1>
             <p className="text-sm text-[#6B7280]">Run standalone copy-ready invoice generators powered by Gemini</p>
           </div>
         </div>
@@ -84,13 +77,13 @@ export default function AIAssistant() {
                 }}
                 className={`p-4 rounded-xl border text-left transition-all ${
                   activeTool === id
-                    ? 'bg-white border-[#2563EB] shadow-md border-l-4 border-l-[#2563EB]'
-                    : 'bg-white border-[#E5E7EB] hover:bg-[#F7F9FC]'
+                    ? 'bg-white border-[#1A998F] shadow-md border-l-4 border-l-[#1A998F]'
+                    : 'bg-white border-[#E5E7EB] hover:bg-[#F4F7F6]'
                 }`}
               >
                 <div className="flex items-center gap-2 mb-1.5">
-                  <Icon size={16} className={activeTool === id ? 'text-[#2563EB]' : 'text-[#6B7280]'} />
-                  <span className="text-sm font-bold text-[#0F1115]">{label}</span>
+                  <Icon size={16} className={activeTool === id ? 'text-[#1A998F]' : 'text-[#6B7280]'} />
+                  <span className="text-sm font-bold text-[#102E3C]">{label}</span>
                 </div>
                 <p className="text-xs text-[#6B7280] leading-relaxed">{desc}</p>
               </button>
@@ -136,9 +129,9 @@ export default function AIAssistant() {
 
             {/* Output */}
             {result && (
-              <div className="card border-[#BFDBFE] bg-gradient-to-br from-blue-50/40 to-white overflow-hidden animate-fade-in">
+              <div className="card border-[#C4CFCE] bg-gradient-to-br from-teal-50/40 to-white overflow-hidden animate-fade-in">
                 <div className="flex items-center justify-between px-5 py-3 border-b border-[#E5E7EB] bg-white">
-                  <span className="text-xs font-bold text-[#2563EB] flex items-center gap-1.5">
+                  <span className="text-xs font-bold text-[#1A998F] flex items-center gap-1.5">
                     <Sparkles size={13} /> AI Generated Output
                   </span>
                   <button onClick={copy} className="btn-secondary !py-1 !px-2.5 flex items-center gap-1 text-xs">
@@ -146,7 +139,7 @@ export default function AIAssistant() {
                     {copied ? 'Copied' : 'Copy'}
                   </button>
                 </div>
-                <div className="p-5 text-sm text-[#0F1115] leading-relaxed whitespace-pre-wrap">
+                <div className="p-5 text-sm text-[#102E3C] leading-relaxed whitespace-pre-wrap">
                   {result}
                 </div>
               </div>

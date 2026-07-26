@@ -222,7 +222,7 @@ export default function InvoiceEditor() {
     return (
       <AppLayout>
         <div className="flex items-center justify-center h-64">
-          <div className="w-8 h-8 border-4 border-[#EFF4FF] border-t-[#2563EB] rounded-full animate-spin-slow" />
+          <div className="w-8 h-8 border-4 border-[#E6F4F3] border-t-[#1A998F] rounded-full animate-spin-slow" />
         </div>
       </AppLayout>
     );

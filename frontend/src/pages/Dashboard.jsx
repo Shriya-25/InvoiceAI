@@ -71,7 +71,7 @@ export default function Dashboard() {
   ];
 
   const colorMap = {
-    blue: { bg: 'bg-[#EFF4FF]', text: 'text-[#2563EB]', card: 'border-l-[#2563EB]' },
+    blue: { bg: 'bg-[#E6F4F3]', text: 'text-[#1A998F]', card: 'border-l-[#1A998F]' },
     green: { bg: 'bg-[#DCFCE7]', text: 'text-[#16A34A]', card: 'border-l-[#16A34A]' },
     amber: { bg: 'bg-[#FEF3C7]', text: 'text-[#D97706]', card: 'border-l-[#D97706]' },
     red: { bg: 'bg-[#FEE2E2]', text: 'text-[#DC2626]', card: 'border-l-[#DC2626]' },
@@ -127,7 +127,7 @@ export default function Dashboard() {
           <div className="card p-5 lg:col-span-2">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-sm font-bold text-[#0F1115]">Revenue (Last 6 Months)</h2>
-              <TrendingUp size={16} className="text-[#2563EB]" />
+              <TrendingUp size={16} className="text-[#1A998F]" />
             </div>
             {loading ? <div className="h-48 shimmer rounded-lg" /> : (
               <ResponsiveContainer width="100%" height={180}>
@@ -139,7 +139,7 @@ export default function Dashboard() {
                     contentStyle={{ background: '#fff', border: '1px solid #E5E7EB', borderRadius: 8, fontSize: 12 }}
                     formatter={(v) => [formatCurrency(v), 'Revenue']}
                   />
-                  <Bar dataKey="revenue" fill="#2563EB" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="revenue" fill="#1A998F" radius={[4, 4, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             )}
@@ -184,7 +184,7 @@ export default function Dashboard() {
           <div className="card lg:col-span-2">
             <div className="flex items-center justify-between px-5 py-4 border-b border-[#E5E7EB]">
               <h2 className="text-sm font-bold text-[#0F1115]">Recent Invoices</h2>
-              <Link to="/invoices" className="text-xs font-semibold text-[#2563EB] hover:text-[#1D4ED8] flex items-center gap-1">
+              <Link to="/invoices" className="text-xs font-semibold text-[#1A998F] hover:text-[#187F87] flex items-center gap-1">
                 View all <ArrowUpRight size={12} />
               </Link>
             </div>
@@ -210,8 +210,8 @@ export default function Dashboard() {
                   return (
                     <Link key={inv.id} to={`/invoices/${inv.id}`} className="table-row grid-cols-[1fr_auto_auto] hover:no-underline block">
                       <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-lg bg-[#EFF4FF] flex items-center justify-center shrink-0">
-                          <FileText size={14} className="text-[#2563EB]" />
+                        <div className="w-8 h-8 rounded-lg bg-[#E6F4F3] flex items-center justify-center shrink-0">
+                          <FileText size={14} className="text-[#1A998F]" />
                         </div>
                         <div>
                           <p className="text-sm font-semibold text-[#0F1115]">{inv.invoiceNumber}</p>
@@ -235,12 +235,12 @@ export default function Dashboard() {
             <div className="card p-5">
               <h2 className="text-sm font-bold text-[#0F1115] mb-4">Quick Actions</h2>
               <div className="flex flex-col gap-2">
-                <Link to="/new-invoice" id="qa-new-invoice" className="flex items-center gap-3 p-3 rounded-xl bg-[#EFF4FF] hover:bg-[#DBEAFE] transition-colors group">
-                  <div className="w-9 h-9 rounded-xl bg-[#2563EB] flex items-center justify-center group-hover:scale-105 transition-transform">
+                <Link to="/new-invoice" id="qa-new-invoice" className="flex items-center gap-3 p-3 rounded-xl bg-[#E6F4F3] hover:bg-[#C4CFCE]/30 transition-colors group">
+                  <div className="w-9 h-9 rounded-xl bg-[#1A998F] flex items-center justify-center group-hover:scale-105 transition-transform">
                     <PlusCircle size={18} className="text-white" />
                   </div>
                   <div>
-                    <p className="text-sm font-semibold text-[#2563EB]">New Invoice</p>
+                    <p className="text-sm font-semibold text-[#1A998F]">New Invoice</p>
                     <p className="text-xs text-[#6B7280]">AI or manual builder</p>
                   </div>
                 </Link>
@@ -272,7 +272,7 @@ export default function Dashboard() {
                 <div className="flex flex-col gap-2.5">
                   {activity.slice(0, 5).map(act => (
                     <div key={act.id} className="flex items-start gap-2.5">
-                      <div className="w-1.5 h-1.5 rounded-full bg-[#2563EB] mt-1.5 shrink-0" />
+                      <div className="w-1.5 h-1.5 rounded-full bg-[#1A998F] mt-1.5 shrink-0" />
                       <div>
                         <p className="text-xs text-[#0F1115] leading-snug">{act.description}</p>
                         <p className="text-[10px] text-[#9CA3AF] mt-0.5">{formatRelativeTime(act.timestamp)}</p>
