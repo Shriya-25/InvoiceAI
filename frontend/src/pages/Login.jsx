@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Zap, Mail, Lock, User, ArrowRight, Eye, EyeOff } from 'lucide-react';
-import { signInWithEmail, signUpWithEmail, signInAsGuest } from '../firebase/auth';
+import { signInWithEmail, signUpWithEmail } from '../firebase/auth';
 import toast from 'react-hot-toast';
 
 export default function Login() {
@@ -19,16 +19,33 @@ export default function Login() {
     try {
       if (mode === 'signin') await signInWithEmail(form.email, form.password);
       else await signUpWithEmail(form.email, form.password, form.name);
-      go(); toast.success(mode === 'signin' ? 'Welcome back!' : 'Account created!');
-    } catch (e) { toast.error(e.message || 'Authentication failed'); }
-    finally { setLoading(''); }
+      go();
+      toast.success(mode === 'signin' ? 'Welcome back!' : 'Account created!');
+    } catch (err) {
+      const msg =
+        err.code === 'auth/configuration-not-found' || err.code === 'auth/operation-not-allowed'
+          ? 'Email sign-in is not enabled yet. Enable it in Firebase Console → Authentication → Sign-in method.'
+          : err.code === 'auth/invalid-credential' || err.code === 'auth/wrong-password'
+          ? 'Incorrect email or password.'
+          : err.code === 'auth/user-not-found'
+          ? 'No account found with this email.'
+          : err.code === 'auth/email-already-in-use'
+          ? 'An account with this email already exists.'
+          : err.message || 'Authentication failed';
+      toast.error(msg);
+    } finally {
+      setLoading('');
+    }
   };
 
-  const handleGuest = async () => {
-    setLoading('guest');
-    try { await signInAsGuest(); go(); toast.success('Signed in as Guest'); }
-    catch (e) { toast.error('Failed to sign in as guest'); }
-    finally { setLoading(''); }
+  // Bypass Firebase — use localStorage mock to enter app without signing in
+  const handleSkip = () => {
+    const mockUser = { uid: 'skip-user', displayName: 'You', email: '', isAnonymous: true };
+    localStorage.setItem('invoice_ai_mock_user', JSON.stringify(mockUser));
+    window.IS_MOCKED_FIREBASE = true;
+    window.dispatchEvent(new Event('mock_auth_changed'));
+    go();
+    toast.success('Entered without signing in');
   };
 
   const set = (k) => (e) => setForm(f => ({ ...f, [k]: e.target.value }));
@@ -138,24 +155,19 @@ export default function Login() {
             </button>
           </div>
 
-          {/* Guest */}
-          <div className="mt-5 pt-5 border-t border-[#E5E7EB]">
+          {/* Skip for now */}
+          <div className="mt-5 pt-4 border-t border-[#E5E7EB] text-center">
             <button
-              id="btn-guest"
-              onClick={handleGuest}
-              disabled={!!loading}
-              className="w-full text-center text-sm text-[#6B7280] hover:text-[#102E3C] transition-colors py-2 rounded-lg hover:bg-[#F4F7F6] disabled:opacity-50"
+              id="btn-skip"
+              onClick={handleSkip}
+              className="text-xs text-[#9CA3AF] hover:text-[#6B7280] transition-colors"
             >
-              {loading === 'guest' ? (
-                <span className="inline-block w-3 h-3 border-2 border-[#D1D5DB] border-t-[#6B7280] rounded-full animate-spin-slow mr-1" />
-              ) : null}
-              Continue as Guest →
+              Skip for now — explore without signing in →
             </button>
-            <p className="text-center text-xs text-[#9CA3AF] mt-1">No sign-up required — try before you commit</p>
           </div>
         </div>
 
-        {/* Footer */}
+        {/* Footer note */}
         <p className="text-center text-xs text-[#9CA3AF] mt-6">
           By signing in, you agree to our Terms of Service and Privacy Policy
         </p>
