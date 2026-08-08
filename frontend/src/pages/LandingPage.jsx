@@ -1,40 +1,9 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { Zap, Sparkles, ArrowRight, CheckCircle, FileText, ShieldCheck, Download, Users, Lock, Mail, User, Eye, EyeOff, X, Clock, BarChart3, Globe, Star } from 'lucide-react';
-import { signInWithEmail, signUpWithEmail, signInAsGuest } from '../firebase/auth';
+import { Zap, Sparkles, ArrowRight, ShieldCheck, Download, Users, Lock, Mail, User, Eye, EyeOff, X, Star } from 'lucide-react';
+import { signInWithEmail, signUpWithEmail } from '../firebase/auth';
 import { useAuth } from '../context/AuthContext';
 import toast from 'react-hot-toast';
-
-// Animated counter component
-function AnimatedCounter({ end, duration = 2000, suffix = '', prefix = '' }) {
-  const [count, setCount] = useState(0);
-  const ref = useRef(null);
-  const hasAnimated = useRef(false);
-
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting && !hasAnimated.current) {
-          hasAnimated.current = true;
-          const startTime = performance.now();
-          const animate = (currentTime) => {
-            const elapsed = currentTime - startTime;
-            const progress = Math.min(elapsed / duration, 1);
-            const eased = 1 - Math.pow(1 - progress, 3); // ease-out cubic
-            setCount(Math.floor(eased * end));
-            if (progress < 1) requestAnimationFrame(animate);
-          };
-          requestAnimationFrame(animate);
-        }
-      },
-      { threshold: 0.3 }
-    );
-    if (ref.current) observer.observe(ref.current);
-    return () => observer.disconnect();
-  }, [end, duration]);
-
-  return <span ref={ref}>{prefix}{count.toLocaleString()}{suffix}</span>;
-}
 
 export default function LandingPage() {
   const navigate = useNavigate();
@@ -83,24 +52,25 @@ export default function LandingPage() {
       setShowAuthModal(false);
       goDashboard();
       toast.success(authMode === 'signin' ? 'Welcome back!' : 'Account created!');
-    } catch (e) {
-      toast.error(e.message || 'Authentication failed');
+    } catch (err) {
+      const msg = err.code === 'auth/configuration-not-found' || err.code === 'auth/operation-not-allowed'
+        ? 'Email sign-in is not enabled yet. Please enable it in Firebase Console → Authentication.'
+        : err.message || 'Authentication failed';
+      toast.error(msg);
     } finally {
       setLoading('');
     }
   };
 
-  const handleGuest = async () => {
-    setLoading('guest');
-    try {
-      await signInAsGuest();
-      goDashboard();
-      toast.success('Signed in as Guest');
-    } catch (e) {
-      toast.error('Failed to start guest session');
-    } finally {
-      setLoading('');
-    }
+  // Bypass Firebase — use localStorage mock user to enter app directly
+  const handleSkip = () => {
+    const mockUser = { uid: 'skip-user', displayName: 'You', email: '', isAnonymous: true };
+    localStorage.setItem('invoice_ai_mock_user', JSON.stringify(mockUser));
+    window.IS_MOCKED_FIREBASE = true;
+    window.dispatchEvent(new Event('mock_auth_changed'));
+    setShowAuthModal(false);
+    goDashboard();
+    toast.success('Entered without signing in');
   };
 
   return (
@@ -110,7 +80,6 @@ export default function LandingPage() {
         <div className="absolute -top-40 left-1/2 -translate-x-1/2 w-[1000px] h-[500px] bg-gradient-to-b from-[#E6F4F3] via-[#E6F4F3]/40 to-transparent blur-3xl opacity-70" />
         <div className="absolute top-96 -right-40 w-96 h-96 rounded-full bg-[#1A998F]/8 blur-3xl animate-pulse-soft" />
         <div className="absolute top-[800px] -left-40 w-96 h-96 rounded-full bg-[#155665]/5 blur-3xl animate-pulse-soft" style={{ animationDelay: '1s' }} />
-        {/* Animated gradient orbs */}
         <div className="absolute top-[400px] right-1/4 w-64 h-64 rounded-full bg-gradient-to-br from-[#1A998F]/10 to-[#155665]/5 blur-3xl animate-float-slow" />
         <div className="absolute top-[1200px] left-1/4 w-80 h-80 rounded-full bg-gradient-to-br from-[#E6F4F3]/50 to-[#1A998F]/5 blur-3xl animate-float" />
       </div>
@@ -126,9 +95,7 @@ export default function LandingPage() {
           </Link>
 
           <div className="hidden md:flex items-center gap-8 text-sm font-medium text-[#6B7280]">
-            <a href="#features" className="hover:text-[#1A998F] transition-colors">Features</a>
             <a href="#how-it-works" className="hover:text-[#1A998F] transition-colors">How it works</a>
-            <a href="#stats" className="hover:text-[#1A998F] transition-colors">Why InvoiceAI</a>
           </div>
 
           <div className="flex items-center gap-3">
@@ -139,17 +106,13 @@ export default function LandingPage() {
             ) : (
               <>
                 <button
-                  onClick={handleGuest}
-                  disabled={!!loading}
+                  onClick={() => { setAuthMode('signin'); setShowAuthModal(true); }}
                   className="btn-secondary !border-transparent hover:!bg-[#E6F4F3] !text-[#102E3C] font-semibold text-sm"
                 >
-                  {loading === 'guest' ? (
-                    <span className="w-4 h-4 border-2 border-teal-600 border-t-transparent rounded-full animate-spin-slow" />
-                  ) : null}
-                  Try as Guest
+                  Login
                 </button>
                 <button
-                  onClick={() => { setAuthMode('signin'); setShowAuthModal(true); }}
+                  onClick={() => { setAuthMode('signup'); setShowAuthModal(true); }}
                   className="btn-primary text-sm font-semibold"
                 >
                   Get Started
@@ -177,36 +140,19 @@ export default function LandingPage() {
         </h1>
 
         {/* Subtitle */}
-        <p className="text-lg sm:text-xl text-[#6B7280] max-w-2xl leading-relaxed mb-8 animate-slide-up delay-200">
+        <p className="text-lg sm:text-xl text-[#6B7280] max-w-2xl leading-relaxed mb-10 animate-slide-up delay-200">
           Generate invoices, manage clients, track payments, and export PDFs—all from one place.
         </p>
 
-        {/* CTA Button Group */}
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-4 w-full sm:w-auto mb-4 animate-slide-up delay-300">
+        {/* CTA Button — single Get Started */}
+        <div className="flex items-center justify-center mb-16 animate-slide-up delay-300">
           <button
             onClick={() => { setAuthMode('signup'); setShowAuthModal(true); }}
-            className="btn-primary w-full sm:w-auto px-8 py-3.5 !text-base !rounded-xl shadow-lg shadow-teal-600/25 justify-center group"
+            className="btn-primary px-8 py-3.5 !text-base !rounded-xl shadow-lg shadow-teal-600/25 justify-center group"
           >
             Get Started <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
           </button>
-          <button
-            onClick={handleGuest}
-            disabled={!!loading}
-            className="btn-secondary w-full sm:w-auto px-8 py-3.5 !text-base !rounded-xl !border-[#C4CFCE] justify-center group"
-          >
-            {loading === 'guest' ? (
-              <span className="w-5 h-5 border-2 border-teal-600 border-t-transparent rounded-full animate-spin-slow" />
-            ) : (
-              <Sparkles size={18} className="text-[#1A998F] group-hover:animate-wiggle" />
-            )}
-            Try Demo
-          </button>
         </div>
-
-        {/* Guest Warning Caption */}
-        <p className="text-xs font-medium text-[#6B7280] italic flex items-center justify-center gap-1.5 mb-16 animate-slide-up delay-400">
-          <span>"Your invoices won't be saved permanently until you sign in."</span>
-        </p>
 
         {/* ─── Hero Invoice Illustration & Floating Cards ─── */}
         <div className="relative w-full max-w-4xl mx-auto mt-2 animate-scale-in delay-500">
@@ -274,7 +220,7 @@ export default function LandingPage() {
             </div>
           </div>
 
-          {/* Floating Card 3: Security badge (new) */}
+          {/* Floating Card 3: Security badge */}
           <div className="absolute top-1/2 -right-4 sm:-right-12 -translate-y-1/2 bg-white border border-green-200 rounded-xl p-3 shadow-lg hidden lg:flex items-center gap-2 animate-float" style={{ animationDelay: '1s' }}>
             <div className="w-7 h-7 rounded-lg bg-green-100 flex items-center justify-center">
               <ShieldCheck size={14} className="text-green-600" />
@@ -282,82 +228,6 @@ export default function LandingPage() {
             <div className="text-left">
               <p className="text-[11px] font-bold text-[#102E3C]">Secure</p>
               <p className="text-[10px] text-[#6B7280]">End-to-end</p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ═══ Trusted Stats Section ═══ */}
-      <section id="stats" className="py-16 px-6 border-t border-[#E5E7EB]/50">
-        <div className="max-w-5xl mx-auto">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
-            <div className="scroll-reveal" style={{ transitionDelay: '0ms' }}>
-              <p className="text-3xl sm:text-4xl font-black text-[#1A998F] mb-1">
-                <AnimatedCounter end={500} suffix="+" />
-              </p>
-              <p className="text-xs font-semibold text-[#6B7280] uppercase tracking-wider">Invoices Created</p>
-            </div>
-            <div className="scroll-reveal" style={{ transitionDelay: '100ms' }}>
-              <p className="text-3xl sm:text-4xl font-black text-[#1A998F] mb-1">
-                <AnimatedCounter end={98} suffix="%" />
-              </p>
-              <p className="text-xs font-semibold text-[#6B7280] uppercase tracking-wider">Time Saved</p>
-            </div>
-            <div className="scroll-reveal" style={{ transitionDelay: '200ms' }}>
-              <p className="text-3xl sm:text-4xl font-black text-[#1A998F] mb-1">
-                <AnimatedCounter end={3} suffix="s" />
-              </p>
-              <p className="text-xs font-semibold text-[#6B7280] uppercase tracking-wider">Avg. Generation</p>
-            </div>
-            <div className="scroll-reveal" style={{ transitionDelay: '300ms' }}>
-              <p className="text-3xl sm:text-4xl font-black text-[#1A998F] mb-1">
-                <AnimatedCounter prefix="₹" end={25} suffix="L+" />
-              </p>
-              <p className="text-xs font-semibold text-[#6B7280] uppercase tracking-wider">Revenue Tracked</p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ═══ Feature Highlights Grid ═══ */}
-      <section id="features" className="py-20 bg-[#F4F7F6] border-t border-[#E5E7EB] px-6">
-        <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-16 scroll-reveal">
-            <h2 className="text-3xl font-extrabold text-[#102E3C] mb-3">Everything You Need to Get Paid</h2>
-            <p className="text-sm text-[#6B7280] max-w-xl mx-auto">
-              Built for freelancers, agency owners, and independent professionals who value speed and aesthetics.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div className="card p-7 hover:border-[#1A998F] transition-all group scroll-reveal" style={{ transitionDelay: '0ms' }}>
-              <div className="w-12 h-12 rounded-xl bg-[#E6F4F3] flex items-center justify-center mb-5 group-hover:scale-110 group-hover:shadow-lg group-hover:shadow-teal-500/20 transition-all">
-                <Sparkles size={22} className="text-[#1A998F]" />
-              </div>
-              <h3 className="text-lg font-bold text-[#102E3C] mb-2">Natural Language AI</h3>
-              <p className="text-sm text-[#6B7280] leading-relaxed">
-                Describe your work in plain text and let Gemini construct structured line items, tax math, and due dates automatically.
-              </p>
-            </div>
-
-            <div className="card p-7 hover:border-[#1A998F] transition-all group scroll-reveal" style={{ transitionDelay: '100ms' }}>
-              <div className="w-12 h-12 rounded-xl bg-[#E6F4F3] flex items-center justify-center mb-5 group-hover:scale-110 group-hover:shadow-lg group-hover:shadow-teal-500/20 transition-all">
-                <Download size={22} className="text-[#1A998F]" />
-              </div>
-              <h3 className="text-lg font-bold text-[#102E3C] mb-2">Branded PDF Export</h3>
-              <p className="text-sm text-[#6B7280] leading-relaxed">
-                Download crisp, client-ready PDFs complete with your custom business logo, GST details, and authorized signature.
-              </p>
-            </div>
-
-            <div className="card p-7 hover:border-[#1A998F] transition-all group scroll-reveal" style={{ transitionDelay: '200ms' }}>
-              <div className="w-12 h-12 rounded-xl bg-[#E6F4F3] flex items-center justify-center mb-5 group-hover:scale-110 group-hover:shadow-lg group-hover:shadow-teal-500/20 transition-all">
-                <Users size={22} className="text-[#1A998F]" />
-              </div>
-              <h3 className="text-lg font-bold text-[#102E3C] mb-2">Client & Revenue Tracking</h3>
-              <p className="text-sm text-[#6B7280] leading-relaxed">
-                Organize client contact history, filter by paid/pending/overdue status, and view financial analytics at a glance.
-              </p>
             </div>
           </div>
         </div>
@@ -432,41 +302,6 @@ export default function LandingPage() {
               <p className="text-sm font-bold text-white">Shriya P.</p>
               <p className="text-xs text-[#C4CFCE]">Freelance Developer</p>
             </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ═══ CTA Section ═══ */}
-      <section className="py-20 px-6 bg-white">
-        <div className="max-w-3xl mx-auto text-center scroll-reveal">
-          <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-[#1A998F] to-[#155665] flex items-center justify-center mx-auto mb-6 shadow-lg shadow-teal-700/20 animate-float">
-            <Zap size={28} className="text-white" fill="white" />
-          </div>
-          <h2 className="text-3xl sm:text-4xl font-black text-[#102E3C] mb-4">
-            Ready to Simplify Your Invoicing?
-          </h2>
-          <p className="text-base text-[#6B7280] mb-8 max-w-lg mx-auto">
-            Join hundreds of professionals who trust InvoiceAI to handle their billing. Start free, no credit card needed.
-          </p>
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-            <button
-              onClick={() => { setAuthMode('signup'); setShowAuthModal(true); }}
-              className="btn-primary px-8 py-3.5 !text-base !rounded-xl shadow-lg shadow-teal-600/25 justify-center group"
-            >
-              Create Free Account <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
-            </button>
-            <button
-              onClick={handleGuest}
-              disabled={!!loading}
-              className="btn-secondary px-8 py-3.5 !text-base !rounded-xl !border-[#C4CFCE] justify-center"
-            >
-              {loading === 'guest' ? (
-                <span className="w-5 h-5 border-2 border-teal-600 border-t-transparent rounded-full animate-spin-slow" />
-              ) : (
-                <Sparkles size={18} className="text-[#1A998F]" />
-              )}
-              Try Demo First
-            </button>
           </div>
         </div>
       </section>
@@ -572,6 +407,16 @@ export default function LandingPage() {
                 className="text-xs font-semibold text-[#1A998F] hover:underline"
               >
                 {authMode === 'signin' ? "Don't have an account? Sign up" : "Already have an account? Sign in"}
+              </button>
+            </div>
+
+            {/* Skip for now */}
+            <div className="mt-4 pt-4 border-t border-[#E5E7EB] text-center">
+              <button
+                onClick={handleSkip}
+                className="text-xs text-[#9CA3AF] hover:text-[#6B7280] transition-colors"
+              >
+                Skip for now — explore without signing in →
               </button>
             </div>
           </div>
