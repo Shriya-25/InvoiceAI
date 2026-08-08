@@ -1,6 +1,4 @@
 import {
-  signInWithPopup,
-  GoogleAuthProvider,
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
   signInAnonymously,
@@ -8,8 +6,6 @@ import {
   updateProfile,
 } from 'firebase/auth';
 import { auth } from './config';
-
-const googleProvider = new GoogleAuthProvider();
 
 // Simulates user state for mock mode
 const getMockUser = () => {
@@ -25,15 +21,6 @@ const setMockUser = (user) => {
   }
   // Dispatch custom event to trigger session updates
   window.dispatchEvent(new Event('mock_auth_changed'));
-};
-
-export const signInWithGoogle = () => {
-  if (window.IS_MOCKED_FIREBASE) {
-    const mockUser = { uid: 'mock-google-user', displayName: 'Jane Doe', email: 'jane.doe@gmail.com', isAnonymous: false };
-    setMockUser(mockUser);
-    return Promise.resolve({ user: mockUser });
-  }
-  return signInWithPopup(auth, googleProvider);
 };
 
 export const signInWithEmail = (email, password) => {

@@ -2,6 +2,15 @@ import axios from 'axios';
 
 const api = axios.create({ baseURL: '/api' });
 
+// Attach Gemini API key from localStorage on every AI request
+api.interceptors.request.use((config) => {
+  const geminiKey = localStorage.getItem('invoice_ai_gemini_key');
+  if (geminiKey) {
+    config.headers['x-gemini-api-key'] = geminiKey;
+  }
+  return config;
+});
+
 export const generateInvoiceAI = (prompt) =>
   api.post('/ai/generate-invoice', { prompt }).then(r => r.data.data);
 
