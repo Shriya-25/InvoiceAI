@@ -4,7 +4,9 @@ const gemini = require('../services/geminiService');
 
 const handle = (fn) => async (req, res) => {
   try {
-    const result = await fn(req.body);
+    // Extract optional client-provided Gemini API key from header
+    const apiKey = req.headers['x-gemini-api-key'] || null;
+    const result = await fn(req.body, apiKey);
     res.json({ success: true, data: result });
   } catch (err) {
     console.error(err);
@@ -12,11 +14,11 @@ const handle = (fn) => async (req, res) => {
   }
 };
 
-router.post('/generate-invoice', handle(({ prompt }) => gemini.generateInvoice(prompt)));
-router.post('/generate-description', handle(({ context }) => gemini.generateDescription(context)));
-router.post('/suggest-terms', handle(({ context }) => gemini.suggestPaymentTerms(context)));
-router.post('/generate-notes', handle(({ context }) => gemini.generateNotes(context)));
-router.post('/validate-invoice', handle(({ invoice }) => gemini.validateInvoice(invoice)));
-router.post('/generate-email', handle(({ invoice }) => gemini.generateEmail(invoice)));
+router.post('/generate-invoice', handle(({ prompt }, apiKey) => gemini.generateInvoice(prompt, apiKey)));
+router.post('/generate-description', handle(({ context }, apiKey) => gemini.generateDescription(context, apiKey)));
+router.post('/suggest-terms', handle(({ context }, apiKey) => gemini.suggestPaymentTerms(context, apiKey)));
+router.post('/generate-notes', handle(({ context }, apiKey) => gemini.generateNotes(context, apiKey)));
+router.post('/validate-invoice', handle(({ invoice }, apiKey) => gemini.validateInvoice(invoice, apiKey)));
+router.post('/generate-email', handle(({ invoice }, apiKey) => gemini.generateEmail(invoice, apiKey)));
 
 module.exports = router;

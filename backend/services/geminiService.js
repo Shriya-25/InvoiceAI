@@ -1,7 +1,18 @@
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+// Default client from environment variable
+const defaultKey = process.env.GEMINI_API_KEY;
+
+/**
+ * Returns a Gemini model instance.
+ * Uses the client-provided API key if available, otherwise falls back to the server env key.
+ */
+function getModel(apiKey) {
+  const key = apiKey || defaultKey;
+  if (!key) throw new Error('No Gemini API key configured. Please add your API key in the AI Assistant settings.');
+  const genAI = new GoogleGenerativeAI(key);
+  return genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+}
 
 const INVOICE_SYSTEM_PROMPT = `You are an invoice generation assistant. When given a natural language description of work done, return ONLY a valid JSON object (no markdown, no explanation) with this exact structure:
 {
@@ -21,7 +32,8 @@ Rules:
 - Return ONLY the JSON object, no other text
 - Today's date is: ${new Date().toISOString().split('T')[0]}`;
 
-async function generateInvoice(prompt) {
+async function generateInvoice(prompt, apiKey) {
+  const model = getModel(apiKey);
   const result = await model.generateContent(`${INVOICE_SYSTEM_PROMPT}\n\nUser description: ${prompt}`);
   const text = result.response.text().trim();
   const jsonMatch = text.match(/\{[\s\S]*\}/);
@@ -29,7 +41,8 @@ async function generateInvoice(prompt) {
   return JSON.parse(jsonMatch[0]);
 }
 
-async function generateDescription(context) {
+async function generateDescription(context, apiKey) {
+  const model = getModel(apiKey);
   const prompt = `You are a professional invoice assistant. Convert this rough service description into a polished, client-ready paragraph (2-3 sentences max). Return ONLY the description text, no JSON:
 
 Rough description: "${context}"`;
@@ -37,7 +50,8 @@ Rough description: "${context}"`;
   return result.response.text().trim();
 }
 
-async function suggestPaymentTerms(context) {
+async function suggestPaymentTerms(context, apiKey) {
+  const model = getModel(apiKey);
   const prompt = `You are an invoice assistant. Based on this invoice context, suggest the best payment terms. Return ONLY a JSON object:
 {"terms": "Net 30", "reason": "Brief explanation"}
 
@@ -49,7 +63,8 @@ Context: ${JSON.stringify(context)}`;
   return JSON.parse(jsonMatch[0]);
 }
 
-async function generateNotes(context) {
+async function generateNotes(context, apiKey) {
+  const model = getModel(apiKey);
   const prompt = `Generate professional invoice notes/footer text (1-2 sentences, polite and professional). Return ONLY the notes text, no JSON.
 
 Invoice context: ${JSON.stringify(context)}`;
@@ -57,7 +72,7 @@ Invoice context: ${JSON.stringify(context)}`;
   return result.response.text().trim();
 }
 
-async function validateInvoice(invoice) {
+async function validateInvoice(invoice, apiKey) {
   const issues = [];
   if (!invoice.client?.name) issues.push({ field: 'client.name', message: 'Client name is required' });
   if (!invoice.client?.email) issues.push({ field: 'client.email', message: 'Client email is missing' });
@@ -72,7 +87,8 @@ async function validateInvoice(invoice) {
   return { valid: issues.length === 0, issues };
 }
 
-async function generateEmail(invoice) {
+async function generateEmail(invoice, apiKey) {
+  const model = getModel(apiKey);
   const total = invoice.items?.reduce((sum, item) => sum + (item.quantity * item.rate), 0) || 0;
   const prompt = `Write a professional, friendly email to send with an invoice. Return ONLY the email body text (no subject line, no JSON):
 
