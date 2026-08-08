@@ -1,6 +1,7 @@
-import { useState } from 'react';
-import { Sparkles, Type, Clock, FileCheck, Mail, Copy, CheckCheck, Loader2 } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Sparkles, Type, Clock, FileCheck, Mail, Copy, CheckCheck, Loader2, Key, AlertCircle } from 'lucide-react';
 import AppLayout from '../components/layout/AppLayout';
+import ApiKeySettings from '../components/ui/ApiKeySettings';
 import { generateDescriptionAI, suggestTermsAI, generateNotesAI, generateEmailAI } from '../utils/api';
 import toast from 'react-hot-toast';
 
@@ -17,8 +18,18 @@ export default function AIAssistant() {
   const [result, setResult] = useState('');
   const [loading, setLoading] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [hasApiKey, setHasApiKey] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
+
+  useEffect(() => {
+    setHasApiKey(!!localStorage.getItem('invoice_ai_gemini_key'));
+  }, []);
 
   const run = async () => {
+    if (!hasApiKey) {
+      setShowSettings(true);
+      return toast.error('Please configure your Gemini API key first');
+    }
     if (activeTool === 'description' && !input.trim()) {
       return toast.error('Please enter a description input');
     }
@@ -58,11 +69,42 @@ export default function AIAssistant() {
           <div className="w-10 h-10 rounded-xl bg-gradient-to-r from-[#1A998F] to-[#155665] flex items-center justify-center">
             <Sparkles size={20} className="text-white" />
           </div>
-          <div>
+          <div className="flex-1">
             <h1 className="text-2xl font-bold text-[#102E3C]">AI Assistant Playground</h1>
             <p className="text-sm text-[#6B7280]">Run standalone copy-ready invoice generators powered by Gemini</p>
           </div>
+          <button
+            onClick={() => setShowSettings(s => !s)}
+            className={`btn-secondary !py-2 !px-3 text-xs ${hasApiKey ? '' : '!border-amber-300 !bg-amber-50 !text-amber-700'}`}
+          >
+            <Key size={14} />
+            {hasApiKey ? 'API Key Settings' : 'Set API Key'}
+          </button>
         </div>
+
+        {/* API Key Warning Banner */}
+        {!hasApiKey && !showSettings && (
+          <div className="mb-6 flex items-center gap-3 p-4 rounded-xl bg-amber-50 border border-amber-200 animate-fade-in">
+            <AlertCircle size={18} className="text-amber-600 flex-shrink-0" />
+            <div className="flex-1">
+              <p className="text-sm font-semibold text-amber-800">Gemini API Key Required</p>
+              <p className="text-xs text-amber-600 mt-0.5">You need to configure your API key to use AI features.</p>
+            </div>
+            <button onClick={() => setShowSettings(true)} className="btn-primary !py-1.5 !px-3 text-xs !bg-amber-600 hover:!bg-amber-700">
+              Configure Now
+            </button>
+          </div>
+        )}
+
+        {/* API Key Settings Panel */}
+        {showSettings && (
+          <div className="mb-6 animate-fade-in">
+            <ApiKeySettings onKeyChange={(key) => {
+              setHasApiKey(!!key);
+              if (key) setShowSettings(false);
+            }} />
+          </div>
+        )}
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {/* Menu */}

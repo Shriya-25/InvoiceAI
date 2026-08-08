@@ -1,9 +1,40 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { Zap, Sparkles, ArrowRight, CheckCircle, FileText, ShieldCheck, Download, Users, Lock, Mail, User, Eye, EyeOff, X } from 'lucide-react';
-import { signInWithGoogle, signInWithEmail, signUpWithEmail, signInAsGuest } from '../firebase/auth';
+import { Zap, Sparkles, ArrowRight, CheckCircle, FileText, ShieldCheck, Download, Users, Lock, Mail, User, Eye, EyeOff, X, Clock, BarChart3, Globe, Star } from 'lucide-react';
+import { signInWithEmail, signUpWithEmail, signInAsGuest } from '../firebase/auth';
 import { useAuth } from '../context/AuthContext';
 import toast from 'react-hot-toast';
+
+// Animated counter component
+function AnimatedCounter({ end, duration = 2000, suffix = '', prefix = '' }) {
+  const [count, setCount] = useState(0);
+  const ref = useRef(null);
+  const hasAnimated = useRef(false);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting && !hasAnimated.current) {
+          hasAnimated.current = true;
+          const startTime = performance.now();
+          const animate = (currentTime) => {
+            const elapsed = currentTime - startTime;
+            const progress = Math.min(elapsed / duration, 1);
+            const eased = 1 - Math.pow(1 - progress, 3); // ease-out cubic
+            setCount(Math.floor(eased * end));
+            if (progress < 1) requestAnimationFrame(animate);
+          };
+          requestAnimationFrame(animate);
+        }
+      },
+      { threshold: 0.3 }
+    );
+    if (ref.current) observer.observe(ref.current);
+    return () => observer.disconnect();
+  }, [end, duration]);
+
+  return <span ref={ref}>{prefix}{count.toLocaleString()}{suffix}</span>;
+}
 
 export default function LandingPage() {
   const navigate = useNavigate();
@@ -13,22 +44,35 @@ export default function LandingPage() {
   const [showPass, setShowPass] = useState(false);
   const [loading, setLoading] = useState('');
   const [form, setForm] = useState({ name: '', email: '', password: '' });
+  const [navScrolled, setNavScrolled] = useState(false);
 
   const goDashboard = () => navigate('/dashboard');
 
-  const handleGoogle = async () => {
-    setLoading('google');
-    try {
-      await signInWithGoogle();
-      setShowAuthModal(false);
-      goDashboard();
-      toast.success('Welcome to InvoiceAI!');
-    } catch (e) {
-      toast.error(e.message || 'Google sign-in failed');
-    } finally {
-      setLoading('');
-    }
-  };
+  // Scroll-triggered animations via IntersectionObserver
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('revealed');
+          }
+        });
+      },
+      { threshold: 0.1, rootMargin: '0px 0px -60px 0px' }
+    );
+
+    const elements = document.querySelectorAll('.scroll-reveal, .scroll-reveal-left, .scroll-reveal-right, .scroll-reveal-scale');
+    elements.forEach((el) => observer.observe(el));
+
+    return () => observer.disconnect();
+  }, []);
+
+  // Nav shadow on scroll
+  useEffect(() => {
+    const onScroll = () => setNavScrolled(window.scrollY > 20);
+    window.addEventListener('scroll', onScroll);
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
 
   const handleEmail = async (e) => {
     e.preventDefault();
@@ -64,105 +108,110 @@ export default function LandingPage() {
       {/* Background radial gradients */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
         <div className="absolute -top-40 left-1/2 -translate-x-1/2 w-[1000px] h-[500px] bg-gradient-to-b from-[#E6F4F3] via-[#E6F4F3]/40 to-transparent blur-3xl opacity-70" />
-        <div className="absolute top-96 -right-40 w-96 h-96 rounded-full bg-[#1A998F]/8 blur-3xl" />
-        <div className="absolute top-[800px] -left-40 w-96 h-96 rounded-full bg-[#155665]/5 blur-3xl" />
+        <div className="absolute top-96 -right-40 w-96 h-96 rounded-full bg-[#1A998F]/8 blur-3xl animate-pulse-soft" />
+        <div className="absolute top-[800px] -left-40 w-96 h-96 rounded-full bg-[#155665]/5 blur-3xl animate-pulse-soft" style={{ animationDelay: '1s' }} />
+        {/* Animated gradient orbs */}
+        <div className="absolute top-[400px] right-1/4 w-64 h-64 rounded-full bg-gradient-to-br from-[#1A998F]/10 to-[#155665]/5 blur-3xl animate-float-slow" />
+        <div className="absolute top-[1200px] left-1/4 w-80 h-80 rounded-full bg-gradient-to-br from-[#E6F4F3]/50 to-[#1A998F]/5 blur-3xl animate-float" />
       </div>
 
-      {/* Navigation Bar */}
-      <header className="relative z-30 max-w-7xl mx-auto w-full px-6 py-5 flex items-center justify-between">
-        <Link to="/" className="flex items-center gap-2.5">
-          <div className="w-9 h-9 rounded-xl bg-[#1A998F] flex items-center justify-center shadow-md shadow-teal-700/20">
-            <Zap size={18} className="text-white" fill="white" />
+      {/* ═══ Navigation Bar ═══ */}
+      <header className={`sticky top-0 z-50 transition-all duration-300 ${navScrolled ? 'bg-white/80 backdrop-blur-xl shadow-sm border-b border-[#E5E7EB]/50' : 'bg-transparent'}`}>
+        <div className="max-w-7xl mx-auto w-full px-6 py-4 flex items-center justify-between animate-slide-down">
+          <Link to="/" className="flex items-center gap-2.5 group">
+            <div className="w-9 h-9 rounded-xl bg-[#1A998F] flex items-center justify-center shadow-md shadow-teal-700/20 group-hover:shadow-teal-700/40 transition-shadow">
+              <Zap size={18} className="text-white" fill="white" />
+            </div>
+            <span className="text-xl font-extrabold text-[#102E3C] tracking-tight">InvoiceAI</span>
+          </Link>
+
+          <div className="hidden md:flex items-center gap-8 text-sm font-medium text-[#6B7280]">
+            <a href="#features" className="hover:text-[#1A998F] transition-colors">Features</a>
+            <a href="#how-it-works" className="hover:text-[#1A998F] transition-colors">How it works</a>
+            <a href="#stats" className="hover:text-[#1A998F] transition-colors">Why InvoiceAI</a>
           </div>
-          <span className="text-xl font-extrabold text-[#102E3C] tracking-tight">InvoiceAI</span>
-        </Link>
 
-        <div className="hidden md:flex items-center gap-8 text-sm font-medium text-[#6B7280]">
-          <a href="#features" className="hover:text-[#1A998F] transition-colors">Features</a>
-          <a href="#how-it-works" className="hover:text-[#1A998F] transition-colors">How it works</a>
-          <a href="#templates" className="hover:text-[#1A998F] transition-colors">Templates</a>
-        </div>
-
-        <div className="flex items-center gap-3">
-          {user ? (
-            <button onClick={goDashboard} className="btn-primary text-sm font-semibold">
-              Go to Dashboard <ArrowRight size={15} />
-            </button>
-          ) : (
-            <>
-              <button
-                onClick={handleGuest}
-                disabled={!!loading}
-                className="btn-secondary !border-transparent hover:!bg-[#E6F4F3] !text-[#102E3C] font-semibold text-sm"
-              >
-                {loading === 'guest' ? (
-                  <span className="w-4 h-4 border-2 border-teal-600 border-t-transparent rounded-full animate-spin-slow" />
-                ) : null}
-                Try as Guest
+          <div className="flex items-center gap-3">
+            {user ? (
+              <button onClick={goDashboard} className="btn-primary text-sm font-semibold">
+                Go to Dashboard <ArrowRight size={15} />
               </button>
-              <button
-                onClick={() => { setAuthMode('signin'); setShowAuthModal(true); }}
-                className="btn-primary text-sm font-semibold"
-              >
-                Get Started
-              </button>
-            </>
-          )}
+            ) : (
+              <>
+                <button
+                  onClick={handleGuest}
+                  disabled={!!loading}
+                  className="btn-secondary !border-transparent hover:!bg-[#E6F4F3] !text-[#102E3C] font-semibold text-sm"
+                >
+                  {loading === 'guest' ? (
+                    <span className="w-4 h-4 border-2 border-teal-600 border-t-transparent rounded-full animate-spin-slow" />
+                  ) : null}
+                  Try as Guest
+                </button>
+                <button
+                  onClick={() => { setAuthMode('signin'); setShowAuthModal(true); }}
+                  className="btn-primary text-sm font-semibold"
+                >
+                  Get Started
+                </button>
+              </>
+            )}
+          </div>
         </div>
       </header>
 
-      {/* Hero Section */}
-      <section className="relative z-20 pt-12 pb-20 px-6 max-w-5xl mx-auto text-center flex flex-col items-center">
+      {/* ═══ Hero Section ═══ */}
+      <section className="relative z-20 pt-16 pb-24 px-6 max-w-5xl mx-auto text-center flex flex-col items-center">
         {/* Brand Badge */}
-        <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#E6F4F3] border border-[#C4CFCE]/60 mb-6 shadow-sm animate-fade-in">
+        <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#E6F4F3] border border-[#C4CFCE]/60 mb-6 shadow-sm animate-slide-up animate-glow">
           <Zap size={14} className="text-[#1A998F]" fill="currentColor" />
           <span className="text-xs font-bold text-[#1A998F] tracking-wide uppercase">InvoiceAI ⚡</span>
         </div>
 
         {/* Main Headline */}
-        <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black text-[#102E3C] tracking-tight leading-[1.15] mb-6 max-w-4xl animate-fade-in">
+        <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black text-[#102E3C] tracking-tight leading-[1.15] mb-6 max-w-4xl animate-slide-up delay-100">
           Create Professional Invoices <br className="hidden sm:block" />
-          <span className="bg-gradient-to-r from-[#1A998F] via-[#187F87] to-[#155665] bg-clip-text text-transparent">
+          <span className="bg-gradient-to-r from-[#1A998F] via-[#187F87] to-[#155665] bg-clip-text text-transparent animate-gradient bg-[length:200%_200%]">
             in Seconds with AI
           </span>
         </h1>
 
         {/* Subtitle */}
-        <p className="text-lg sm:text-xl text-[#6B7280] max-w-2xl leading-relaxed mb-8 animate-fade-in">
+        <p className="text-lg sm:text-xl text-[#6B7280] max-w-2xl leading-relaxed mb-8 animate-slide-up delay-200">
           Generate invoices, manage clients, track payments, and export PDFs—all from one place.
         </p>
 
         {/* CTA Button Group */}
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-4 w-full sm:w-auto mb-4 animate-fade-in">
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-4 w-full sm:w-auto mb-4 animate-slide-up delay-300">
           <button
             onClick={() => { setAuthMode('signup'); setShowAuthModal(true); }}
-            className="btn-primary w-full sm:w-auto px-8 py-3.5 !text-base !rounded-xl shadow-lg shadow-teal-600/25 justify-center"
+            className="btn-primary w-full sm:w-auto px-8 py-3.5 !text-base !rounded-xl shadow-lg shadow-teal-600/25 justify-center group"
           >
-            Get Started <ArrowRight size={18} />
+            Get Started <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
           </button>
           <button
             onClick={handleGuest}
             disabled={!!loading}
-            className="btn-secondary w-full sm:w-auto px-8 py-3.5 !text-base !rounded-xl !border-[#C4CFCE] justify-center"
+            className="btn-secondary w-full sm:w-auto px-8 py-3.5 !text-base !rounded-xl !border-[#C4CFCE] justify-center group"
           >
             {loading === 'guest' ? (
               <span className="w-5 h-5 border-2 border-teal-600 border-t-transparent rounded-full animate-spin-slow" />
             ) : (
-              <Sparkles size={18} className="text-[#1A998F]" />
+              <Sparkles size={18} className="text-[#1A998F] group-hover:animate-wiggle" />
             )}
             Try Demo
           </button>
         </div>
 
         {/* Guest Warning Caption */}
-        <p className="text-xs font-medium text-[#6B7280] italic flex items-center justify-center gap-1.5 mb-16 animate-fade-in">
+        <p className="text-xs font-medium text-[#6B7280] italic flex items-center justify-center gap-1.5 mb-16 animate-slide-up delay-400">
           <span>"Your invoices won't be saved permanently until you sign in."</span>
         </p>
 
-        {/* Hero Invoice Illustration & Floating Cards */}
-        <div className="relative w-full max-w-4xl mx-auto mt-2 animate-fade-in">
+        {/* ─── Hero Invoice Illustration & Floating Cards ─── */}
+        <div className="relative w-full max-w-4xl mx-auto mt-2 animate-scale-in delay-500">
           {/* Main Mockup Card */}
-          <div className="relative bg-white rounded-2xl border border-[#E5E7EB] shadow-[0_25px_60px_-15px_rgba(16,46,60,0.12)] p-6 sm:p-8 text-left overflow-hidden">
+          <div className="relative bg-white rounded-2xl border border-[#E5E7EB] shadow-[0_25px_60px_-15px_rgba(16,46,60,0.12)] p-6 sm:p-8 text-left overflow-hidden animate-glow">
             {/* Mock Header */}
             <div className="flex items-center justify-between pb-6 border-b border-[#E5E7EB] mb-6">
               <div className="flex items-center gap-3">
@@ -194,7 +243,7 @@ export default function LandingPage() {
             </div>
 
             {/* Mock Footer Totals */}
-            <div className="flex items-center justify-between pt-4 border-t border-[#E5E7EB] bg-[#F4F7F6] -mx-6 -mb-6 p-6">
+            <div className="flex items-center justify-between pt-4 border-t border-[#E5E7EB] bg-[#F4F7F6] -mx-6 -mb-6 p-6 sm:-mx-8 sm:-mb-8 sm:p-8">
               <span className="text-xs text-[#6B7280] font-semibold">Payment Terms: Net 15 Days</span>
               <div className="text-right">
                 <span className="text-xs text-[#6B7280] block">Total Amount</span>
@@ -204,7 +253,7 @@ export default function LandingPage() {
           </div>
 
           {/* Floating Card 1: AI Prompt Tag */}
-          <div className="absolute -top-6 -left-4 sm:-left-8 bg-white border border-[#C4CFCE] rounded-xl p-3.5 shadow-xl flex items-center gap-3 animate-pulse-soft hidden sm:flex">
+          <div className="absolute -top-6 -left-4 sm:-left-8 bg-white border border-[#C4CFCE] rounded-xl p-3.5 shadow-xl flex items-center gap-3 animate-float hidden sm:flex">
             <div className="w-8 h-8 rounded-lg bg-purple-100 flex items-center justify-center">
               <Sparkles size={16} className="text-purple-600" />
             </div>
@@ -215,7 +264,7 @@ export default function LandingPage() {
           </div>
 
           {/* Floating Card 2: Generated Time */}
-          <div className="absolute -bottom-6 -right-4 sm:-right-8 bg-[#102E3C] text-white rounded-xl p-3.5 shadow-xl flex items-center gap-3 hidden sm:flex">
+          <div className="absolute -bottom-6 -right-4 sm:-right-8 bg-[#102E3C] text-white rounded-xl p-3.5 shadow-xl flex items-center gap-3 hidden sm:flex animate-float-slow">
             <div className="w-8 h-8 rounded-lg bg-[#1A998F] flex items-center justify-center">
               <Zap size={16} className="text-white" fill="white" />
             </div>
@@ -224,13 +273,56 @@ export default function LandingPage() {
               <p className="text-[11px] text-[#C4CFCE]">Ready for PDF export</p>
             </div>
           </div>
+
+          {/* Floating Card 3: Security badge (new) */}
+          <div className="absolute top-1/2 -right-4 sm:-right-12 -translate-y-1/2 bg-white border border-green-200 rounded-xl p-3 shadow-lg hidden lg:flex items-center gap-2 animate-float" style={{ animationDelay: '1s' }}>
+            <div className="w-7 h-7 rounded-lg bg-green-100 flex items-center justify-center">
+              <ShieldCheck size={14} className="text-green-600" />
+            </div>
+            <div className="text-left">
+              <p className="text-[11px] font-bold text-[#102E3C]">Secure</p>
+              <p className="text-[10px] text-[#6B7280]">End-to-end</p>
+            </div>
+          </div>
         </div>
       </section>
 
-      {/* Feature Highlights Grid */}
+      {/* ═══ Trusted Stats Section ═══ */}
+      <section id="stats" className="py-16 px-6 border-t border-[#E5E7EB]/50">
+        <div className="max-w-5xl mx-auto">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
+            <div className="scroll-reveal" style={{ transitionDelay: '0ms' }}>
+              <p className="text-3xl sm:text-4xl font-black text-[#1A998F] mb-1">
+                <AnimatedCounter end={500} suffix="+" />
+              </p>
+              <p className="text-xs font-semibold text-[#6B7280] uppercase tracking-wider">Invoices Created</p>
+            </div>
+            <div className="scroll-reveal" style={{ transitionDelay: '100ms' }}>
+              <p className="text-3xl sm:text-4xl font-black text-[#1A998F] mb-1">
+                <AnimatedCounter end={98} suffix="%" />
+              </p>
+              <p className="text-xs font-semibold text-[#6B7280] uppercase tracking-wider">Time Saved</p>
+            </div>
+            <div className="scroll-reveal" style={{ transitionDelay: '200ms' }}>
+              <p className="text-3xl sm:text-4xl font-black text-[#1A998F] mb-1">
+                <AnimatedCounter end={3} suffix="s" />
+              </p>
+              <p className="text-xs font-semibold text-[#6B7280] uppercase tracking-wider">Avg. Generation</p>
+            </div>
+            <div className="scroll-reveal" style={{ transitionDelay: '300ms' }}>
+              <p className="text-3xl sm:text-4xl font-black text-[#1A998F] mb-1">
+                <AnimatedCounter prefix="₹" end={25} suffix="L+" />
+              </p>
+              <p className="text-xs font-semibold text-[#6B7280] uppercase tracking-wider">Revenue Tracked</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ═══ Feature Highlights Grid ═══ */}
       <section id="features" className="py-20 bg-[#F4F7F6] border-t border-[#E5E7EB] px-6">
         <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-16">
+          <div className="text-center mb-16 scroll-reveal">
             <h2 className="text-3xl font-extrabold text-[#102E3C] mb-3">Everything You Need to Get Paid</h2>
             <p className="text-sm text-[#6B7280] max-w-xl mx-auto">
               Built for freelancers, agency owners, and independent professionals who value speed and aesthetics.
@@ -238,8 +330,8 @@ export default function LandingPage() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div className="card p-7 hover:border-[#1A998F] transition-all group">
-              <div className="w-12 h-12 rounded-xl bg-[#E6F4F3] flex items-center justify-center mb-5 group-hover:scale-110 transition-transform">
+            <div className="card p-7 hover:border-[#1A998F] transition-all group scroll-reveal" style={{ transitionDelay: '0ms' }}>
+              <div className="w-12 h-12 rounded-xl bg-[#E6F4F3] flex items-center justify-center mb-5 group-hover:scale-110 group-hover:shadow-lg group-hover:shadow-teal-500/20 transition-all">
                 <Sparkles size={22} className="text-[#1A998F]" />
               </div>
               <h3 className="text-lg font-bold text-[#102E3C] mb-2">Natural Language AI</h3>
@@ -248,8 +340,8 @@ export default function LandingPage() {
               </p>
             </div>
 
-            <div className="card p-7 hover:border-[#1A998F] transition-all group">
-              <div className="w-12 h-12 rounded-xl bg-[#E6F4F3] flex items-center justify-center mb-5 group-hover:scale-110 transition-transform">
+            <div className="card p-7 hover:border-[#1A998F] transition-all group scroll-reveal" style={{ transitionDelay: '100ms' }}>
+              <div className="w-12 h-12 rounded-xl bg-[#E6F4F3] flex items-center justify-center mb-5 group-hover:scale-110 group-hover:shadow-lg group-hover:shadow-teal-500/20 transition-all">
                 <Download size={22} className="text-[#1A998F]" />
               </div>
               <h3 className="text-lg font-bold text-[#102E3C] mb-2">Branded PDF Export</h3>
@@ -258,8 +350,8 @@ export default function LandingPage() {
               </p>
             </div>
 
-            <div className="card p-7 hover:border-[#1A998F] transition-all group">
-              <div className="w-12 h-12 rounded-xl bg-[#E6F4F3] flex items-center justify-center mb-5 group-hover:scale-110 transition-transform">
+            <div className="card p-7 hover:border-[#1A998F] transition-all group scroll-reveal" style={{ transitionDelay: '200ms' }}>
+              <div className="w-12 h-12 rounded-xl bg-[#E6F4F3] flex items-center justify-center mb-5 group-hover:scale-110 group-hover:shadow-lg group-hover:shadow-teal-500/20 transition-all">
                 <Users size={22} className="text-[#1A998F]" />
               </div>
               <h3 className="text-lg font-bold text-[#102E3C] mb-2">Client & Revenue Tracking</h3>
@@ -271,7 +363,115 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Footer */}
+      {/* ═══ How It Works Section ═══ */}
+      <section id="how-it-works" className="py-20 px-6 bg-white">
+        <div className="max-w-5xl mx-auto">
+          <div className="text-center mb-16 scroll-reveal">
+            <h2 className="text-3xl font-extrabold text-[#102E3C] mb-3">How It Works</h2>
+            <p className="text-sm text-[#6B7280] max-w-lg mx-auto">
+              From idea to paid invoice in three simple steps. No accounting knowledge needed.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-10 relative">
+            {/* Connecting line (desktop only) */}
+            <div className="hidden md:block absolute top-16 left-[16.67%] right-[16.67%] h-0.5 bg-gradient-to-r from-[#1A998F] via-[#C4CFCE] to-[#1A998F] opacity-30" />
+
+            {/* Step 1 */}
+            <div className="text-center scroll-reveal" style={{ transitionDelay: '0ms' }}>
+              <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-[#1A998F] to-[#155665] flex items-center justify-center mx-auto mb-5 shadow-lg shadow-teal-700/20 animate-float" style={{ animationDelay: '0s' }}>
+                <span className="text-white font-black text-lg">1</span>
+              </div>
+              <h3 className="text-base font-bold text-[#102E3C] mb-2">Describe Your Work</h3>
+              <p className="text-sm text-[#6B7280] leading-relaxed max-w-xs mx-auto">
+                Type a natural language description of the services you provided — just like you'd tell a friend.
+              </p>
+            </div>
+
+            {/* Step 2 */}
+            <div className="text-center scroll-reveal" style={{ transitionDelay: '150ms' }}>
+              <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-[#1A998F] to-[#155665] flex items-center justify-center mx-auto mb-5 shadow-lg shadow-teal-700/20 animate-float" style={{ animationDelay: '0.5s' }}>
+                <span className="text-white font-black text-lg">2</span>
+              </div>
+              <h3 className="text-base font-bold text-[#102E3C] mb-2">AI Generates Invoice</h3>
+              <p className="text-sm text-[#6B7280] leading-relaxed max-w-xs mx-auto">
+                Gemini AI structures line items, calculates taxes, sets due dates, and formats everything professionally.
+              </p>
+            </div>
+
+            {/* Step 3 */}
+            <div className="text-center scroll-reveal" style={{ transitionDelay: '300ms' }}>
+              <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-[#1A998F] to-[#155665] flex items-center justify-center mx-auto mb-5 shadow-lg shadow-teal-700/20 animate-float" style={{ animationDelay: '1s' }}>
+                <span className="text-white font-black text-lg">3</span>
+              </div>
+              <h3 className="text-base font-bold text-[#102E3C] mb-2">Export & Send</h3>
+              <p className="text-sm text-[#6B7280] leading-relaxed max-w-xs mx-auto">
+                Download a branded PDF, manage payment status, and auto-generate a professional email to your client.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ═══ Testimonial / Trust Section ═══ */}
+      <section className="py-16 bg-gradient-to-br from-[#102E3C] to-[#155665] px-6">
+        <div className="max-w-4xl mx-auto text-center scroll-reveal">
+          <div className="inline-flex items-center gap-1 mb-6">
+            {[...Array(5)].map((_, i) => (
+              <Star key={i} size={18} className="text-amber-400 fill-amber-400" />
+            ))}
+          </div>
+          <blockquote className="text-xl sm:text-2xl font-semibold text-white leading-relaxed mb-6 max-w-3xl mx-auto">
+            "InvoiceAI turned my 30-minute invoicing routine into a 30-second task. The AI understands exactly what I need every time."
+          </blockquote>
+          <div className="flex items-center justify-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-[#1A998F] flex items-center justify-center text-white font-bold text-sm">
+              SP
+            </div>
+            <div className="text-left">
+              <p className="text-sm font-bold text-white">Shriya P.</p>
+              <p className="text-xs text-[#C4CFCE]">Freelance Developer</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ═══ CTA Section ═══ */}
+      <section className="py-20 px-6 bg-white">
+        <div className="max-w-3xl mx-auto text-center scroll-reveal">
+          <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-[#1A998F] to-[#155665] flex items-center justify-center mx-auto mb-6 shadow-lg shadow-teal-700/20 animate-float">
+            <Zap size={28} className="text-white" fill="white" />
+          </div>
+          <h2 className="text-3xl sm:text-4xl font-black text-[#102E3C] mb-4">
+            Ready to Simplify Your Invoicing?
+          </h2>
+          <p className="text-base text-[#6B7280] mb-8 max-w-lg mx-auto">
+            Join hundreds of professionals who trust InvoiceAI to handle their billing. Start free, no credit card needed.
+          </p>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+            <button
+              onClick={() => { setAuthMode('signup'); setShowAuthModal(true); }}
+              className="btn-primary px-8 py-3.5 !text-base !rounded-xl shadow-lg shadow-teal-600/25 justify-center group"
+            >
+              Create Free Account <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
+            </button>
+            <button
+              onClick={handleGuest}
+              disabled={!!loading}
+              className="btn-secondary px-8 py-3.5 !text-base !rounded-xl !border-[#C4CFCE] justify-center"
+            >
+              {loading === 'guest' ? (
+                <span className="w-5 h-5 border-2 border-teal-600 border-t-transparent rounded-full animate-spin-slow" />
+              ) : (
+                <Sparkles size={18} className="text-[#1A998F]" />
+              )}
+              Try Demo First
+            </button>
+          </div>
+        </div>
+      </section>
+
+      {/* ═══ Footer ═══ */}
       <footer className="py-10 bg-[#102E3C] text-white px-6 mt-auto">
         <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2">
@@ -286,12 +486,12 @@ export default function LandingPage() {
         </div>
       </footer>
 
-      {/* Login Modal */}
+      {/* ═══ Login Modal ═══ */}
       {showAuthModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={() => setShowAuthModal(false)}>
           <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
           <div
-            className="relative w-full max-w-md bg-white rounded-2xl shadow-2xl p-8 animate-fade-in overflow-hidden"
+            className="relative w-full max-w-md bg-white rounded-2xl shadow-2xl p-8 animate-scale-in overflow-hidden"
             onClick={e => e.stopPropagation()}
           >
             <button
@@ -309,31 +509,6 @@ export default function LandingPage() {
                 {authMode === 'signin' ? 'Welcome Back' : 'Create Account'}
               </h2>
               <p className="text-xs text-[#6B7280] mt-1">Sign in to save and sync your invoices</p>
-            </div>
-
-            {/* Google Sign-in */}
-            <button
-              onClick={handleGoogle}
-              disabled={!!loading}
-              className="w-full flex items-center justify-center gap-3 px-4 py-3 border-2 border-[#E5E7EB] rounded-xl font-semibold text-sm text-[#102E3C] bg-white hover:bg-[#F4F7F6] transition-all mb-4 disabled:opacity-50"
-            >
-              {loading === 'google' ? (
-                <span className="w-5 h-5 border-2 border-[#E5E7EB] border-t-[#1A998F] rounded-full animate-spin-slow" />
-              ) : (
-                <svg width="18" height="18" viewBox="0 0 24 24">
-                  <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
-                  <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
-                  <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
-                  <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
-                </svg>
-              )}
-              Continue with Google
-            </button>
-
-            <div className="flex items-center gap-3 mb-4">
-              <div className="flex-1 h-px bg-[#E5E7EB]" />
-              <span className="text-xs text-[#6B7280]">or</span>
-              <div className="flex-1 h-px bg-[#E5E7EB]" />
             </div>
 
             {/* Email form */}
@@ -382,6 +557,11 @@ export default function LandingPage() {
                 </button>
               </div>
               <button type="submit" disabled={!!loading} className="btn-primary w-full justify-center py-2.5 !rounded-xl text-sm mt-1">
+                {loading === 'email' ? (
+                  <span className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin-slow" />
+                ) : (
+                  <ArrowRight size={16} />
+                )}
                 {authMode === 'signin' ? 'Sign In' : 'Create Account'}
               </button>
             </form>
