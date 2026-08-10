@@ -1,10 +1,12 @@
 import {
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
-  signInAnonymously,
   signOut,
   updateProfile,
   sendPasswordResetEmail,
+  setPersistence,
+  browserLocalPersistence,
+  browserSessionPersistence,
 } from 'firebase/auth';
 import { auth } from './config';
 
@@ -24,34 +26,33 @@ const setMockUser = (user) => {
   window.dispatchEvent(new Event('mock_auth_changed'));
 };
 
-export const signInWithEmail = (email, password) => {
+export const signInWithEmail = async (email, password, rememberMe = false) => {
   if (window.IS_MOCKED_FIREBASE) {
     const mockUser = { uid: 'mock-email-user', displayName: 'John Developer', email: email || 'john@gmail.com', isAnonymous: false };
     setMockUser(mockUser);
     return Promise.resolve({ user: mockUser });
   }
+  if (auth) {
+    const persistenceType = rememberMe ? browserLocalPersistence : browserSessionPersistence;
+    await setPersistence(auth, persistenceType);
+  }
   return signInWithEmailAndPassword(auth, email, password);
 };
 
-export const signUpWithEmail = (email, password, displayName) => {
+export const signUpWithEmail = async (email, password, displayName, rememberMe = false) => {
   if (window.IS_MOCKED_FIREBASE) {
     const mockUser = { uid: 'mock-email-user', displayName: displayName || 'Developer User', email: email || 'user@gmail.com', isAnonymous: false };
     setMockUser(mockUser);
     return Promise.resolve({ user: mockUser });
   }
+  if (auth) {
+    const persistenceType = rememberMe ? browserLocalPersistence : browserSessionPersistence;
+    await setPersistence(auth, persistenceType);
+  }
   return createUserWithEmailAndPassword(auth, email, password).then(async (cred) => {
     if (displayName) await updateProfile(cred.user, { displayName });
     return cred;
   });
-};
-
-export const signInAsGuest = () => {
-  if (window.IS_MOCKED_FIREBASE) {
-    const mockUser = { uid: 'mock-guest-user', displayName: 'Guest User', email: '', isAnonymous: true };
-    setMockUser(mockUser);
-    return Promise.resolve({ user: mockUser });
-  }
-  return signInAnonymously(auth);
 };
 
 export const logout = () => {
