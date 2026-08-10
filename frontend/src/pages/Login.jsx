@@ -9,6 +9,7 @@ export default function Login() {
   const [mode, setMode] = useState('signin'); // 'signin' | 'signup' | 'forgot'
   const [showPass, setShowPass] = useState(false);
   const [loading, setLoading] = useState('');
+  const [rememberMe, setRememberMe] = useState(true);
   const [form, setForm] = useState({ name: '', email: '', password: '' });
 
   const go = () => navigate('/dashboard');
@@ -17,10 +18,13 @@ export default function Login() {
     e.preventDefault();
     setLoading('email');
     try {
-      if (mode === 'signin') await signInWithEmail(form.email, form.password);
-      else await signUpWithEmail(form.email, form.password, form.name);
+      if (mode === 'signin') {
+        await signInWithEmail(form.email, form.password, rememberMe);
+      } else {
+        await signUpWithEmail(form.email, form.password, form.name, rememberMe);
+      }
       go();
-      toast.success(mode === 'signin' ? 'Welcome back!' : 'Account created!');
+      toast.success(mode === 'signin' ? 'Welcome back!' : 'Account created successfully!');
     } catch (err) {
       const msg =
         err.code === 'auth/configuration-not-found' || err.code === 'auth/operation-not-allowed'
@@ -68,19 +72,6 @@ export default function Login() {
     } finally {
       setLoading('');
     }
-  };
-
-  // Skip Firebase — set mock user in localStorage so AuthContext picks it up
-  const handleSkip = () => {
-    const mockUser = { uid: 'skip-user', displayName: 'You', email: '', isAnonymous: true };
-    localStorage.setItem('invoice_ai_mock_user', JSON.stringify(mockUser));
-    window.IS_MOCKED_FIREBASE = true;
-    window.dispatchEvent(new Event('mock_auth_changed'));
-    // Small delay to let AuthContext update before navigating
-    setTimeout(() => {
-      go();
-      toast.success('Exploring without signing in');
-    }, 50);
   };
 
   const set = (k) => (e) => setForm(f => ({ ...f, [k]: e.target.value }));
@@ -212,24 +203,34 @@ export default function Login() {
                   </button>
                 </div>
 
-                {/* Forgot password link — only in signin mode */}
-                {mode === 'signin' && (
-                  <div className="flex justify-end -mt-1">
+                {/* Remember me & Forgot password row */}
+                <div className="flex items-center justify-between mt-1 px-1">
+                  <label className="flex items-center gap-2 cursor-pointer select-none">
+                    <input
+                      type="checkbox"
+                      checked={rememberMe}
+                      onChange={(e) => setRememberMe(e.target.checked)}
+                      className="w-4 h-4 rounded border-[#D1D5DB] text-[#1A998F] focus:ring-[#1A998F] focus:ring-offset-0 cursor-pointer"
+                    />
+                    <span className="text-xs text-[#6B7280] font-medium">Remember me</span>
+                  </label>
+
+                  {mode === 'signin' && (
                     <button
                       type="button"
                       onClick={() => setMode('forgot')}
-                      className="text-xs text-[#1A998F] hover:text-[#187F87] font-medium transition-colors"
+                      className="text-xs text-[#1A998F] hover:text-[#187F87] font-semibold transition-colors"
                     >
                       Forgot password?
                     </button>
-                  </div>
-                )}
+                  )}
+                </div>
 
                 <button
                   id="btn-email-submit"
                   type="submit"
                   disabled={!!loading}
-                  className="btn-primary w-full justify-center py-3 !text-sm !rounded-xl"
+                  className="btn-primary w-full justify-center py-3 !text-sm !rounded-xl mt-2"
                 >
                   {loading === 'email' ? (
                     <span className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin-slow" />
@@ -254,17 +255,6 @@ export default function Login() {
               </div>
             </>
           )}
-
-          {/* Skip for now */}
-          <div className="mt-5 pt-4 border-t border-[#E5E7EB] text-center">
-            <button
-              id="btn-skip"
-              onClick={handleSkip}
-              className="text-xs text-[#9CA3AF] hover:text-[#6B7280] transition-colors"
-            >
-              Skip for now — explore without signing in →
-            </button>
-          </div>
         </div>
 
         {/* Footer note */}
