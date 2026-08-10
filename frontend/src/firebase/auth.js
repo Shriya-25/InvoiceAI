@@ -4,6 +4,7 @@ import {
   signInAnonymously,
   signOut,
   updateProfile,
+  sendPasswordResetEmail,
 } from 'firebase/auth';
 import { auth } from './config';
 
@@ -59,4 +60,12 @@ export const logout = () => {
     return Promise.resolve();
   }
   return signOut(auth);
+};
+
+export const resetPassword = (email) => {
+  if (window.IS_MOCKED_FIREBASE) {
+    // Simulate a password reset email in mock mode
+    return Promise.resolve();
+  }
+  return sendPasswordResetEmail(auth, email);
 };

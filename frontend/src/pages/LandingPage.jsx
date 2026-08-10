@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { Zap, Sparkles, ArrowRight, ShieldCheck, Download, Users, Lock, Mail, User, Eye, EyeOff, X, Star } from 'lucide-react';
-import { signInWithEmail, signUpWithEmail } from '../firebase/auth';
+import { Zap, Sparkles, ArrowRight, ShieldCheck, Download, Users, Lock, Mail, User, Eye, EyeOff, X, Star, ArrowLeft } from 'lucide-react';
+import { signInWithEmail, signUpWithEmail, resetPassword } from '../firebase/auth';
 import { useAuth } from '../context/AuthContext';
 import toast from 'react-hot-toast';
 
@@ -9,7 +9,7 @@ export default function LandingPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [showAuthModal, setShowAuthModal] = useState(false);
-  const [authMode, setAuthMode] = useState('signin'); // 'signin' | 'signup'
+  const [authMode, setAuthMode] = useState('signin'); // 'signin' | 'signup' | 'forgot'
   const [showPass, setShowPass] = useState(false);
   const [loading, setLoading] = useState('');
   const [form, setForm] = useState({ name: '', email: '', password: '' });
@@ -53,9 +53,40 @@ export default function LandingPage() {
       goDashboard();
       toast.success(authMode === 'signin' ? 'Welcome back!' : 'Account created!');
     } catch (err) {
-      const msg = err.code === 'auth/configuration-not-found' || err.code === 'auth/operation-not-allowed'
-        ? 'Email sign-in is not enabled yet. Please enable it in Firebase Console → Authentication.'
-        : err.message || 'Authentication failed';
+      const msg =
+        err.code === 'auth/configuration-not-found' || err.code === 'auth/operation-not-allowed'
+          ? 'Email sign-in is not enabled. Please enable it in Firebase Console → Authentication → Sign-in method.'
+          : err.code === 'auth/invalid-credential' || err.code === 'auth/wrong-password'
+          ? 'Incorrect email or password. Please try again.'
+          : err.code === 'auth/user-not-found'
+          ? 'No account found with this email. Please sign up first.'
+          : err.code === 'auth/email-already-in-use'
+          ? 'An account with this email already exists. Try signing in.'
+          : err.code === 'auth/too-many-requests'
+          ? 'Too many failed attempts. Please try again later or reset your password.'
+          : err.code === 'auth/network-request-failed'
+          ? 'Network error. Please check your connection and try again.'
+          : err.message || 'Authentication failed. Please try again.';
+      toast.error(msg);
+    } finally {
+      setLoading('');
+    }
+  };
+
+  const handleForgotPassword = async (e) => {
+    e.preventDefault();
+    if (!form.email) { toast.error('Please enter your email address.'); return; }
+    setLoading('reset');
+    try {
+      await resetPassword(form.email);
+      toast.success('Password reset email sent! Check your inbox.');
+      setAuthMode('signin');
+    } catch (err) {
+      const msg =
+        err.code === 'auth/user-not-found' ? 'No account found with this email address.'
+        : err.code === 'auth/invalid-email' ? 'Invalid email address.'
+        : err.code === 'auth/too-many-requests' ? 'Too many requests. Please wait a moment.'
+        : err.message || 'Failed to send reset email. Please try again.';
       toast.error(msg);
     } finally {
       setLoading('');
@@ -69,8 +100,11 @@ export default function LandingPage() {
     window.IS_MOCKED_FIREBASE = true;
     window.dispatchEvent(new Event('mock_auth_changed'));
     setShowAuthModal(false);
-    goDashboard();
-    toast.success('Entered without signing in');
+    // Small delay to let AuthContext update before navigating
+    setTimeout(() => {
+      goDashboard();
+      toast.success('Exploring without signing in');
+    }, 50);
   };
 
   return (
@@ -341,74 +375,131 @@ export default function LandingPage() {
                 <Zap size={22} className="text-white" fill="white" />
               </div>
               <h2 className="text-xl font-bold text-[#102E3C]">
-                {authMode === 'signin' ? 'Welcome Back' : 'Create Account'}
+                {authMode === 'signin' ? 'Welcome Back' : authMode === 'signup' ? 'Create Account' : 'Reset Password'}
               </h2>
-              <p className="text-xs text-[#6B7280] mt-1">Sign in to save and sync your invoices</p>
+              <p className="text-xs text-[#6B7280] mt-1">
+                {authMode === 'forgot' ? "We'll send a reset link to your email" : 'Sign in to save and sync your invoices'}
+              </p>
             </div>
 
-            {/* Email form */}
-            <form onSubmit={handleEmail} className="flex flex-col gap-3">
-              {authMode === 'signup' && (
-                <div className="relative">
-                  <User size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#9CA3AF]" />
-                  <input
-                    type="text"
-                    placeholder="Full name"
-                    required
-                    value={form.name}
-                    onChange={e => setForm({ ...form, name: e.target.value })}
-                    className="input-field !pl-9 text-sm"
-                  />
+            {/* Forgot Password Form */}
+            {authMode === 'forgot' ? (
+              <>
+                <p className="text-sm text-[#6B7280] text-center mb-4">
+                  Enter your email and we'll send you a reset link.
+                </p>
+                <form onSubmit={handleForgotPassword} className="flex flex-col gap-3">
+                  <div className="relative">
+                    <Mail size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#9CA3AF]" />
+                    <input
+                      type="email"
+                      placeholder="Email address"
+                      required
+                      value={form.email}
+                      onChange={e => setForm({ ...form, email: e.target.value })}
+                      className="input-field !pl-9 text-sm"
+                    />
+                  </div>
+                  <button type="submit" disabled={!!loading} className="btn-primary w-full justify-center py-2.5 !rounded-xl text-sm mt-1">
+                    {loading === 'reset' ? (
+                      <span className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin-slow" />
+                    ) : (
+                      <ArrowRight size={16} />
+                    )}
+                    Send Reset Link
+                  </button>
+                </form>
+                <div className="mt-4 text-center">
+                  <button
+                    onClick={() => setAuthMode('signin')}
+                    className="flex items-center justify-center gap-1.5 text-xs font-semibold text-[#1A998F] hover:underline mx-auto"
+                  >
+                    <ArrowLeft size={13} />
+                    Back to Sign In
+                  </button>
                 </div>
-              )}
-              <div className="relative">
-                <Mail size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#9CA3AF]" />
-                <input
-                  type="email"
-                  placeholder="Email address"
-                  required
-                  value={form.email}
-                  onChange={e => setForm({ ...form, email: e.target.value })}
-                  className="input-field !pl-9 text-sm"
-                />
-              </div>
-              <div className="relative">
-                <Lock size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#9CA3AF]" />
-                <input
-                  type={showPass ? 'text' : 'password'}
-                  placeholder="Password"
-                  required
-                  minLength={6}
-                  value={form.password}
-                  onChange={e => setForm({ ...form, password: e.target.value })}
-                  className="input-field !pl-9 !pr-9 text-sm"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPass(s => !s)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[#9CA3AF]"
-                >
-                  {showPass ? <EyeOff size={15} /> : <Eye size={15} />}
-                </button>
-              </div>
-              <button type="submit" disabled={!!loading} className="btn-primary w-full justify-center py-2.5 !rounded-xl text-sm mt-1">
-                {loading === 'email' ? (
-                  <span className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin-slow" />
-                ) : (
-                  <ArrowRight size={16} />
-                )}
-                {authMode === 'signin' ? 'Sign In' : 'Create Account'}
-              </button>
-            </form>
+              </>
+            ) : (
+              <>
+                {/* Email form */}
+                <form onSubmit={handleEmail} className="flex flex-col gap-3">
+                  {authMode === 'signup' && (
+                    <div className="relative">
+                      <User size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#9CA3AF]" />
+                      <input
+                        type="text"
+                        placeholder="Full name"
+                        required
+                        value={form.name}
+                        onChange={e => setForm({ ...form, name: e.target.value })}
+                        className="input-field !pl-9 text-sm"
+                      />
+                    </div>
+                  )}
+                  <div className="relative">
+                    <Mail size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#9CA3AF]" />
+                    <input
+                      type="email"
+                      placeholder="Email address"
+                      required
+                      value={form.email}
+                      onChange={e => setForm({ ...form, email: e.target.value })}
+                      className="input-field !pl-9 text-sm"
+                    />
+                  </div>
+                  <div className="relative">
+                    <Lock size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#9CA3AF]" />
+                    <input
+                      type={showPass ? 'text' : 'password'}
+                      placeholder="Password"
+                      required
+                      minLength={6}
+                      value={form.password}
+                      onChange={e => setForm({ ...form, password: e.target.value })}
+                      className="input-field !pl-9 !pr-9 text-sm"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPass(s => !s)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-[#9CA3AF]"
+                    >
+                      {showPass ? <EyeOff size={15} /> : <Eye size={15} />}
+                    </button>
+                  </div>
 
-            <div className="mt-4 text-center">
-              <button
-                onClick={() => setAuthMode(m => m === 'signin' ? 'signup' : 'signin')}
-                className="text-xs font-semibold text-[#1A998F] hover:underline"
-              >
-                {authMode === 'signin' ? "Don't have an account? Sign up" : "Already have an account? Sign in"}
-              </button>
-            </div>
+                  {/* Forgot password link */}
+                  {authMode === 'signin' && (
+                    <div className="flex justify-end -mt-1">
+                      <button
+                        type="button"
+                        onClick={() => setAuthMode('forgot')}
+                        className="text-xs text-[#1A998F] hover:text-[#187F87] font-medium transition-colors"
+                      >
+                        Forgot password?
+                      </button>
+                    </div>
+                  )}
+
+                  <button type="submit" disabled={!!loading} className="btn-primary w-full justify-center py-2.5 !rounded-xl text-sm mt-1">
+                    {loading === 'email' ? (
+                      <span className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin-slow" />
+                    ) : (
+                      <ArrowRight size={16} />
+                    )}
+                    {authMode === 'signin' ? 'Sign In' : 'Create Account'}
+                  </button>
+                </form>
+
+                <div className="mt-4 text-center">
+                  <button
+                    onClick={() => setAuthMode(m => m === 'signin' ? 'signup' : 'signin')}
+                    className="text-xs font-semibold text-[#1A998F] hover:underline"
+                  >
+                    {authMode === 'signin' ? "Don't have an account? Sign up" : "Already have an account? Sign in"}
+                  </button>
+                </div>
+              </>
+            )}
 
             {/* Skip for now */}
             <div className="mt-4 pt-4 border-t border-[#E5E7EB] text-center">

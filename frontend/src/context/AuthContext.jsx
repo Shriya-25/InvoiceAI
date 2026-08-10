@@ -9,23 +9,41 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // Handler for mock/skip mode — reads user from localStorage
+    const updateMockUser = () => {
+      const stored = localStorage.getItem('invoice_ai_mock_user');
+      if (stored) {
+        setUser(JSON.parse(stored));
+        setLoading(false);
+        return true;
+      }
+      return false;
+    };
+
+    // Always listen for mock_auth_changed so "Skip for now" works
+    // even when a real Firebase project is configured
+    window.addEventListener('mock_auth_changed', updateMockUser);
+
     if (window.IS_MOCKED_FIREBASE) {
-      const updateMockUser = () => {
-        const stored = localStorage.getItem('invoice_ai_mock_user');
-        setUser(stored ? JSON.parse(stored) : null);
-        setLoading(false);
-      };
-      
+      // Pure mock mode (no Firebase keys set)
       updateMockUser();
-      window.addEventListener('mock_auth_changed', updateMockUser);
-      return () => window.removeEventListener('mock_auth_changed', updateMockUser);
-    } else {
+    } else if (auth) {
+      // Real Firebase — but also handle mock override via skip
       const unsub = onAuthStateChanged(auth, (u) => {
-        setUser(u);
-        setLoading(false);
+        if (!localStorage.getItem('invoice_ai_mock_user')) {
+          setUser(u);
+          setLoading(false);
+        }
       });
-      return unsub;
+      return () => {
+        window.removeEventListener('mock_auth_changed', updateMockUser);
+        unsub();
+      };
+    } else {
+      setLoading(false);
     }
+
+    return () => window.removeEventListener('mock_auth_changed', updateMockUser);
   }, []);
 
   return (
