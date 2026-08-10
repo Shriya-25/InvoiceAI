@@ -12,6 +12,7 @@ export default function LandingPage() {
   const [authMode, setAuthMode] = useState('signin'); // 'signin' | 'signup' | 'forgot'
   const [showPass, setShowPass] = useState(false);
   const [loading, setLoading] = useState('');
+  const [rememberMe, setRememberMe] = useState(true);
   const [form, setForm] = useState({ name: '', email: '', password: '' });
   const [navScrolled, setNavScrolled] = useState(false);
 
@@ -47,11 +48,14 @@ export default function LandingPage() {
     e.preventDefault();
     setLoading('email');
     try {
-      if (authMode === 'signin') await signInWithEmail(form.email, form.password);
-      else await signUpWithEmail(form.email, form.password, form.name);
+      if (authMode === 'signin') {
+        await signInWithEmail(form.email, form.password, rememberMe);
+      } else {
+        await signUpWithEmail(form.email, form.password, form.name, rememberMe);
+      }
       setShowAuthModal(false);
       goDashboard();
-      toast.success(authMode === 'signin' ? 'Welcome back!' : 'Account created!');
+      toast.success(authMode === 'signin' ? 'Welcome back!' : 'Account created successfully!');
     } catch (err) {
       const msg =
         err.code === 'auth/configuration-not-found' || err.code === 'auth/operation-not-allowed'
@@ -71,40 +75,6 @@ export default function LandingPage() {
     } finally {
       setLoading('');
     }
-  };
-
-  const handleForgotPassword = async (e) => {
-    e.preventDefault();
-    if (!form.email) { toast.error('Please enter your email address.'); return; }
-    setLoading('reset');
-    try {
-      await resetPassword(form.email);
-      toast.success('Password reset email sent! Check your inbox.');
-      setAuthMode('signin');
-    } catch (err) {
-      const msg =
-        err.code === 'auth/user-not-found' ? 'No account found with this email address.'
-        : err.code === 'auth/invalid-email' ? 'Invalid email address.'
-        : err.code === 'auth/too-many-requests' ? 'Too many requests. Please wait a moment.'
-        : err.message || 'Failed to send reset email. Please try again.';
-      toast.error(msg);
-    } finally {
-      setLoading('');
-    }
-  };
-
-  // Bypass Firebase — use localStorage mock user to enter app directly
-  const handleSkip = () => {
-    const mockUser = { uid: 'skip-user', displayName: 'You', email: '', isAnonymous: true };
-    localStorage.setItem('invoice_ai_mock_user', JSON.stringify(mockUser));
-    window.IS_MOCKED_FIREBASE = true;
-    window.dispatchEvent(new Event('mock_auth_changed'));
-    setShowAuthModal(false);
-    // Small delay to let AuthContext update before navigating
-    setTimeout(() => {
-      goDashboard();
-      toast.success('Exploring without signing in');
-    }, 50);
   };
 
   return (
@@ -467,20 +437,30 @@ export default function LandingPage() {
                     </button>
                   </div>
 
-                  {/* Forgot password link */}
-                  {authMode === 'signin' && (
-                    <div className="flex justify-end -mt-1">
+                  {/* Remember me & Forgot password row */}
+                  <div className="flex items-center justify-between mt-1 px-1">
+                    <label className="flex items-center gap-2 cursor-pointer select-none">
+                      <input
+                        type="checkbox"
+                        checked={rememberMe}
+                        onChange={(e) => setRememberMe(e.target.checked)}
+                        className="w-4 h-4 rounded border-[#D1D5DB] text-[#1A998F] focus:ring-[#1A998F] focus:ring-offset-0 cursor-pointer"
+                      />
+                      <span className="text-xs text-[#6B7280] font-medium">Remember me</span>
+                    </label>
+
+                    {authMode === 'signin' && (
                       <button
                         type="button"
                         onClick={() => setAuthMode('forgot')}
-                        className="text-xs text-[#1A998F] hover:text-[#187F87] font-medium transition-colors"
+                        className="text-xs text-[#1A998F] hover:text-[#187F87] font-semibold transition-colors"
                       >
                         Forgot password?
                       </button>
-                    </div>
-                  )}
+                    )}
+                  </div>
 
-                  <button type="submit" disabled={!!loading} className="btn-primary w-full justify-center py-2.5 !rounded-xl text-sm mt-1">
+                  <button type="submit" disabled={!!loading} className="btn-primary w-full justify-center py-2.5 !rounded-xl text-sm mt-2">
                     {loading === 'email' ? (
                       <span className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin-slow" />
                     ) : (
@@ -500,16 +480,6 @@ export default function LandingPage() {
                 </div>
               </>
             )}
-
-            {/* Skip for now */}
-            <div className="mt-4 pt-4 border-t border-[#E5E7EB] text-center">
-              <button
-                onClick={handleSkip}
-                className="text-xs text-[#9CA3AF] hover:text-[#6B7280] transition-colors"
-              >
-                Skip for now — explore without signing in →
-              </button>
-            </div>
           </div>
         </div>
       )}
