@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Zap, Sparkles, ArrowRight, ShieldCheck, Download, Users, Lock, Mail, User, Eye, EyeOff, X, Star, ArrowLeft } from 'lucide-react';
 import { signInWithEmail, signUpWithEmail, resetPassword } from '../firebase/auth';
+import { saveProfile } from '../firebase/firestore';
 import { useAuth } from '../context/AuthContext';
 import toast from 'react-hot-toast';
 
@@ -13,7 +14,7 @@ export default function LandingPage() {
   const [showPass, setShowPass] = useState(false);
   const [loading, setLoading] = useState('');
   const [rememberMe, setRememberMe] = useState(true);
-  const [form, setForm] = useState({ name: '', email: '', password: '' });
+  const [form, setForm] = useState({ name: '', email: '', password: '', confirmPassword: '' });
   const [navScrolled, setNavScrolled] = useState(false);
 
   const goDashboard = () => navigate('/dashboard');
@@ -46,12 +47,43 @@ export default function LandingPage() {
 
   const handleEmail = async (e) => {
     e.preventDefault();
+    if (authMode === 'signup') {
+      if (!form.name || !form.name.trim()) {
+        toast.error('Full Name is required');
+        return;
+      }
+      if (!form.email || !form.email.includes('@')) {
+        toast.error('Please enter a valid email address');
+        return;
+      }
+      if (!form.password || form.password.length < 6) {
+        toast.error('Password must be at least 6 characters long');
+        return;
+      }
+      if (form.password !== form.confirmPassword) {
+        toast.error('Passwords do not match');
+        return;
+      }
+    }
     setLoading('email');
     try {
       if (authMode === 'signin') {
         await signInWithEmail(form.email, form.password, rememberMe);
       } else {
-        await signUpWithEmail(form.email, form.password, form.name, rememberMe);
+        const cred = await signUpWithEmail(form.email, form.password, form.name, rememberMe);
+        const uid = cred?.user?.uid;
+        if (uid) {
+          // Initialize business profile with appropriate empty/default values
+          await saveProfile(uid, {
+            businessName: form.name,
+            address: '',
+            gstNumber: '',
+            email: form.email,
+            defaultCurrency: 'INR',
+            logoUrl: '',
+            signatureUrl: ''
+          });
+        }
       }
       setShowAuthModal(false);
       goDashboard();
@@ -70,6 +102,8 @@ export default function LandingPage() {
           ? 'Too many failed attempts. Please try again later or reset your password.'
           : err.code === 'auth/network-request-failed'
           ? 'Network error. Please check your connection and try again.'
+          : err.code === 'auth/invalid-email'
+          ? 'Invalid email address. Please enter a valid email.'
           : err.message || 'Authentication failed. Please try again.';
       toast.error(msg);
     } finally {
@@ -103,26 +137,34 @@ export default function LandingPage() {
           </div>
 
           <div className="flex items-center gap-3">
-            {user ? (
-              <button onClick={goDashboard} className="btn-primary text-sm font-semibold">
-                Go to Dashboard <ArrowRight size={15} />
-              </button>
-            ) : (
-              <>
-                <button
-                  onClick={() => { setAuthMode('signin'); setShowAuthModal(true); }}
-                  className="btn-secondary !border-transparent hover:!bg-[#E6F4F3] !text-[#102E3C] font-semibold text-sm"
-                >
-                  Login
-                </button>
-                <button
-                  onClick={() => { setAuthMode('signup'); setShowAuthModal(true); }}
-                  className="btn-primary text-sm font-semibold"
-                >
-                  Get Started
-                </button>
-              </>
-            )}
+            <button
+              onClick={() => {
+                if (user) {
+                  goDashboard();
+                } else {
+                  setForm({ name: '', email: '', password: '', confirmPassword: '' });
+                  setAuthMode('signin');
+                  setShowAuthModal(true);
+                }
+              }}
+              className="btn-secondary !border-transparent hover:!bg-[#E6F4F3] !text-[#102E3C] font-semibold text-sm"
+            >
+              Login
+            </button>
+            <button
+              onClick={() => {
+                if (user) {
+                  goDashboard();
+                } else {
+                  setForm({ name: '', email: '', password: '', confirmPassword: '' });
+                  setAuthMode('signup');
+                  setShowAuthModal(true);
+                }
+              }}
+              className="btn-primary text-sm font-semibold"
+            >
+              Get Started
+            </button>
           </div>
         </div>
       </header>
@@ -151,7 +193,15 @@ export default function LandingPage() {
         {/* CTA Button — single Get Started */}
         <div className="flex items-center justify-center mb-16 animate-slide-up delay-300">
           <button
-            onClick={() => { setAuthMode('signup'); setShowAuthModal(true); }}
+            onClick={() => {
+              if (user) {
+                goDashboard();
+              } else {
+                setForm({ name: '', email: '', password: '', confirmPassword: '' });
+                setAuthMode('signup');
+                setShowAuthModal(true);
+              }
+            }}
             className="btn-primary px-8 py-3.5 !text-base !rounded-xl shadow-lg shadow-teal-600/25 justify-center group"
           >
             Get Started <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
@@ -436,6 +486,21 @@ export default function LandingPage() {
                       {showPass ? <EyeOff size={15} /> : <Eye size={15} />}
                     </button>
                   </div>
+
+                  {authMode === 'signup' && (
+                    <div className="relative">
+                      <Lock size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#9CA3AF]" />
+                      <input
+                        type={showPass ? 'text' : 'password'}
+                        placeholder="Confirm Password"
+                        required
+                        minLength={6}
+                        value={form.confirmPassword || ''}
+                        onChange={e => setForm({ ...form, confirmPassword: e.target.value })}
+                        className="input-field !pl-9 !pr-9 text-sm"
+                      />
+                    </div>
+                  )}
 
                   {/* Remember me & Forgot password row */}
                   <div className="flex items-center justify-between mt-1 px-1">

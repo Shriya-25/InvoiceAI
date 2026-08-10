@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Zap, Mail, Lock, User, ArrowRight, Eye, EyeOff, ArrowLeft } from 'lucide-react';
 import { signInWithEmail, signUpWithEmail, resetPassword } from '../firebase/auth';
+import { saveProfile } from '../firebase/firestore';
 import toast from 'react-hot-toast';
 
 export default function Login() {
@@ -10,18 +11,49 @@ export default function Login() {
   const [showPass, setShowPass] = useState(false);
   const [loading, setLoading] = useState('');
   const [rememberMe, setRememberMe] = useState(true);
-  const [form, setForm] = useState({ name: '', email: '', password: '' });
+  const [form, setForm] = useState({ name: '', email: '', password: '', confirmPassword: '' });
 
   const go = () => navigate('/dashboard');
 
   const handleEmail = async (e) => {
     e.preventDefault();
+    if (mode === 'signup') {
+      if (!form.name || !form.name.trim()) {
+        toast.error('Full Name is required');
+        return;
+      }
+      if (!form.email || !form.email.includes('@')) {
+        toast.error('Please enter a valid email address');
+        return;
+      }
+      if (!form.password || form.password.length < 6) {
+        toast.error('Password must be at least 6 characters long');
+        return;
+      }
+      if (form.password !== form.confirmPassword) {
+        toast.error('Passwords do not match');
+        return;
+      }
+    }
     setLoading('email');
     try {
       if (mode === 'signin') {
         await signInWithEmail(form.email, form.password, rememberMe);
       } else {
-        await signUpWithEmail(form.email, form.password, form.name, rememberMe);
+        const cred = await signUpWithEmail(form.email, form.password, form.name, rememberMe);
+        const uid = cred?.user?.uid;
+        if (uid) {
+          // Initialize business profile with appropriate empty/default values
+          await saveProfile(uid, {
+            businessName: form.name,
+            address: '',
+            gstNumber: '',
+            email: form.email,
+            defaultCurrency: 'INR',
+            logoUrl: '',
+            signatureUrl: ''
+          });
+        }
       }
       go();
       toast.success(mode === 'signin' ? 'Welcome back!' : 'Account created successfully!');
@@ -202,6 +234,23 @@ export default function Login() {
                     {showPass ? <EyeOff size={16} /> : <Eye size={16} />}
                   </button>
                 </div>
+
+                {/* Confirm Password input in signup mode */}
+                {mode === 'signup' && (
+                  <div className="relative">
+                    <Lock size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#9CA3AF]" />
+                    <input
+                      id="input-confirm-password"
+                      type={showPass ? 'text' : 'password'}
+                      placeholder="Confirm Password"
+                      required
+                      minLength={6}
+                      value={form.confirmPassword}
+                      onChange={set('confirmPassword')}
+                      className="input-field !pl-9 !pr-9"
+                    />
+                  </div>
+                )}
 
                 {/* Remember me & Forgot password row */}
                 <div className="flex items-center justify-between mt-1 px-1">
