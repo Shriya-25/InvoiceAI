@@ -61,7 +61,7 @@ export default function Dashboard() {
   }
 
   const recentInvoices = invoices.slice(0, 5);
-  const displayName = user?.isAnonymous ? 'Guest' : (user?.displayName?.split(' ')[0] || 'there');
+  const displayName = user?.displayName?.split(' ')[0] || 'there';
 
   const STAT_CARDS = [
     { label: 'Total Invoiced', value: formatCurrency(stats.total), icon: DollarSign, color: 'blue', change: `${invoices.length} invoices` },
@@ -93,23 +93,6 @@ export default function Dashboard() {
             </button>
           </Link>
         </div>
-
-        {/* Guest Session Banner */}
-        {user?.isAnonymous && (
-          <div className="mb-6 p-4 rounded-xl bg-amber-50 border border-amber-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 animate-fade-in">
-            <div className="flex items-center gap-2.5">
-              <AlertCircle size={18} className="text-amber-600 shrink-0" />
-              <p className="text-xs font-semibold text-amber-800">
-                You are currently using Demo Mode. <em>Your invoices won't be saved permanently until you sign in.</em>
-              </p>
-            </div>
-            <Link to="/login">
-              <button className="btn-secondary !py-1 !px-3 text-xs border-amber-300 hover:bg-amber-100 font-bold text-amber-900 shrink-0">
-                Sign In to Save
-              </button>
-            </Link>
-          </div>
-        )}
 
         {/* Stat cards */}
         {loading ? (
