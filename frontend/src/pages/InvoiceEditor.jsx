@@ -119,33 +119,36 @@ function EditorContent({ mode, profile }) {
       {/* Toolbar */}
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
-          <button onClick={() => navigate(-1)} className="p-2 rounded-lg hover:bg-[#F7F9FC] text-[#6B7280] hover:text-[#0F1115] transition-colors">
+          <button onClick={() => navigate('/invoices')} className="p-2 rounded-lg hover:bg-[#F7F9FC] text-[#6B7280] hover:text-[#0F1115] transition-colors">
             <ArrowLeft size={18} />
           </button>
           <div>
             <h1 className="text-lg font-bold text-[#0F1115]">
-              {id && id !== 'new' ? 'Edit Invoice' : 'New Invoice'}
+              {id && id !== 'new' ? (mode === 'view' ? 'View Invoice' : 'Edit Invoice') : 'New Invoice'}
             </h1>
-            <p className="text-xs text-[#6B7280]">{mode === 'ai' ? 'AI-generated' : 'Manual builder'} · {invoice.invoiceNumber}</p>
+            <p className="text-xs text-[#6B7280]">{mode === 'ai' ? 'AI-generated' : (mode === 'view' ? 'Read-only preview' : 'Manual builder')} · {invoice.invoiceNumber}</p>
           </div>
         </div>
         <div className="flex items-center gap-2">
-          {/* Mobile preview toggle */}
-          <button
-            className="lg:hidden btn-secondary !p-2"
-            onClick={() => setShowPreview(s => !s)}
-            title="Toggle preview"
-          >
-            {showPreview ? <EyeOff size={16} /> : <Eye size={16} />}
-          </button>
-          <button
-            id="btn-ai-assistant"
-            onClick={() => setShowAI(true)}
-            className="btn-secondary"
-          >
-            <Sparkles size={15} className="text-purple-500" />
-            AI Tools
-          </button>
+          {mode !== 'view' && (
+            <button
+              className="lg:hidden btn-secondary !p-2"
+              onClick={() => setShowPreview(s => !s)}
+              title="Toggle preview"
+            >
+              {showPreview ? <EyeOff size={16} /> : <Eye size={16} />}
+            </button>
+          )}
+          {mode !== 'view' && (
+            <button
+              id="btn-ai-assistant"
+              onClick={() => setShowAI(true)}
+              className="btn-secondary"
+            >
+              <Sparkles size={15} className="text-purple-500" />
+              AI Tools
+            </button>
+          )}
           <button
             id="btn-export-pdf"
             onClick={handleExport}
@@ -155,51 +158,61 @@ function EditorContent({ mode, profile }) {
             {exporting ? <Loader2 size={15} className="animate-spin-slow" /> : <Download size={15} />}
             PDF
           </button>
-          <button
-            id="btn-save-draft"
-            onClick={() => handleSave('draft')}
-            disabled={saving}
-            className="btn-secondary"
-          >
-            {saving ? <Loader2 size={15} className="animate-spin-slow" /> : <Save size={15} />}
-            Save
-          </button>
-          <button
-            id="btn-send-invoice"
-            onClick={() => handleSave('pending')}
-            disabled={saving}
-            className="btn-primary"
-          >
-            <Send size={15} />
-            Send
-          </button>
+          {mode !== 'view' && (
+            <button
+              id="btn-save-draft"
+              onClick={() => handleSave('draft')}
+              disabled={saving}
+              className="btn-secondary"
+            >
+              {saving ? <Loader2 size={15} className="animate-spin-slow" /> : <Save size={15} />}
+              Save
+            </button>
+          )}
+          {mode !== 'view' && (
+            <button
+              id="btn-send-invoice"
+              onClick={() => handleSave('pending')}
+              disabled={saving}
+              className="btn-primary"
+            >
+              <Send size={15} />
+              Send
+            </button>
+          )}
         </div>
       </div>
 
       {/* AI Prompt Bar */}
       {mode === 'ai' && <AIPromptBar onGenerate={handleAIGenerate} />}
 
-      {/* Split layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Form */}
-        <div className={`${showPreview ? 'hidden lg:block' : ''}`}>
-          <div className="card p-5">
-            <InvoiceForm />
+      {/* Layout */}
+      {mode === 'view' ? (
+        <div className="max-w-3xl mx-auto mt-6">
+          <InvoicePreview profile={profile} />
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Form */}
+          <div className={`${showPreview ? 'hidden lg:block' : ''}`}>
+            <div className="card p-5">
+              <InvoiceForm />
+            </div>
+          </div>
+
+          {/* Preview */}
+          <div className={`${!showPreview ? 'hidden lg:block' : ''}`}>
+            <div className="sticky top-6">
+              <p className="text-xs font-bold text-[#6B7280] uppercase tracking-wider mb-3 flex items-center gap-1.5">
+                <Eye size={12} /> Live Preview
+              </p>
+              <InvoicePreview profile={profile} />
+            </div>
           </div>
         </div>
+      )}
 
-        {/* Preview */}
-        <div className={`${!showPreview ? 'hidden lg:block' : ''}`}>
-          <div className="sticky top-6">
-            <p className="text-xs font-bold text-[#6B7280] uppercase tracking-wider mb-3 flex items-center gap-1.5">
-              <Eye size={12} /> Live Preview
-            </p>
-            <InvoicePreview profile={profile} />
-          </div>
-        </div>
-      </div>
-
-      <AIAssistantPanel open={showAI} onClose={() => setShowAI(false)} />
+      {mode !== 'view' && <AIAssistantPanel open={showAI} onClose={() => setShowAI(false)} />}
     </div>
   );
 }

@@ -213,12 +213,12 @@ export default function InvoiceForm() {
           </div>
           <div className="flex flex-col gap-1">
             <label className="text-xs font-semibold text-[#6B7280] uppercase tracking-wide">Notes</label>
-            <textarea
-              rows={3}
-              className="input-field resize-none"
-              {...field('notes')}
-              placeholder="Thank you for your business! Please make payment within the specified terms."
-            />
+            <select className="input-field" {...field('notes')}>
+              <option value="">None</option>
+              <option value="Thank you for your business!">Thank you for your business!</option>
+              <option value="Payment is due by the specified due date.">Payment is due by the specified due date.</option>
+              <option value="Please contact us if you have any questions regarding this invoice.">Please contact us if you have any questions regarding this invoice.</option>
+            </select>
           </div>
         </div>
       </section>

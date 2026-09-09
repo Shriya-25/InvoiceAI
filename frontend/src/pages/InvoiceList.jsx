@@ -62,7 +62,7 @@ export default function InvoiceList() {
     setMenuOpen(null);
     try {
       switch (action) {
-        case 'edit': navigate(`/invoices/${inv.id}?mode=manual`); break;
+        case 'edit': navigate(`/invoices/${inv.id}?mode=edit`); break;
         case 'duplicate': {
           const { id, createdAt, updatedAt, ...rest } = inv;
           await createInvoice(user.uid, { ...rest, invoiceNumber: generateInvoiceNumber(), status: 'draft' });
@@ -187,8 +187,8 @@ export default function InvoiceList() {
           ) : (
             <>
               {/* Column headers */}
-              <div className="grid grid-cols-[auto_1fr_140px_120px_110px_48px] gap-4 px-5 py-2 bg-[#F9FAFB] border-b border-[#E5E7EB]">
-                {['', 'Invoice / Client', 'Amount', 'Due Date', 'Status', ''].map((h, i) => (
+              <div className="grid grid-cols-[1fr_140px_120px_110px_60px_48px] gap-4 px-5 py-2 bg-[#F9FAFB] border-b border-[#E5E7EB]">
+                {['Invoice / Client', 'Amount', 'Due Date', 'Status', 'Edit', ''].map((h, i) => (
                   <span key={i} className="text-[10px] font-bold text-[#9CA3AF] uppercase tracking-wider">{h}</span>
                 ))}
               </div>
@@ -197,19 +197,25 @@ export default function InvoiceList() {
                 return (
                   <div
                     key={inv.id}
-                    className="grid grid-cols-[auto_1fr_140px_120px_110px_48px] gap-4 items-center px-5 py-3.5 border-b border-[#F3F4F6] last:border-0 hover:bg-[#FAFAFA] transition-colors group cursor-pointer"
-                    onClick={() => navigate(`/invoices/${inv.id}`)}
+                    className="grid grid-cols-[1fr_140px_120px_110px_60px_48px] gap-4 items-center px-5 py-3.5 border-b border-[#F3F4F6] last:border-0 hover:bg-[#FAFAFA] transition-colors group cursor-pointer"
+                    onClick={() => navigate(`/invoices/${inv.id}?mode=view`)}
                   >
-                    <div className="w-9 h-9 rounded-xl bg-[#E6F4F3] flex items-center justify-center">
-                      <FileText size={15} className="text-[#1A998F]" />
-                    </div>
                     <div>
-                      <p className="text-sm font-bold text-[#0F1115]">{inv.invoiceNumber}</p>
+                      <p className="text-sm font-bold text-[#0F1115] hover:text-[#1A998F] transition-colors">{inv.invoiceNumber}</p>
                       <p className="text-xs text-[#6B7280]">{inv.client?.name || '—'}</p>
                     </div>
                     <p className="text-sm font-semibold text-[#0F1115]">{formatCurrency(calcTotal(inv), inv.currency)}</p>
                     <p className="text-xs text-[#6B7280]">{formatDate(inv.dueDate)}</p>
                     <Badge status={status} />
+                    <div className="flex items-center" onClick={e => e.stopPropagation()}>
+                      <button
+                        onClick={() => navigate(`/invoices/${inv.id}?mode=edit`)}
+                        className="p-1.5 rounded-lg hover:bg-[#E5E7EB] text-[#6B7280] transition-colors"
+                        title="Edit Invoice"
+                      >
+                        <Edit2 size={16} />
+                      </button>
+                    </div>
                     <div className="relative" onClick={e => e.stopPropagation()}>
                       <button
                         onClick={() => setMenuOpen(menuOpen === inv.id ? null : inv.id)}
