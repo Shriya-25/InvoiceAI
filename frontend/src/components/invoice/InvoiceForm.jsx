@@ -1,5 +1,8 @@
 import { Plus } from 'lucide-react';
 import { useInvoice } from '../../context/InvoiceContext';
+import { useAuth } from '../../context/AuthContext';
+import { getClients } from '../../firebase/firestore';
+import { useState, useEffect } from 'react';
 import LineItemRow from './LineItemRow';
 import { Select } from '../ui/Input';
 import { CURRENCIES } from '../../utils/formatters';
@@ -8,6 +11,15 @@ import { formatCurrency } from '../../utils/formatters';
 
 export default function InvoiceForm() {
   const { invoice, updateInvoice, updateClient, addItem } = useInvoice();
+  const { user } = useAuth();
+  const [savedClients, setSavedClients] = useState([]);
+  
+  useEffect(() => {
+    if (user) {
+      getClients(user.uid).then(res => setSavedClients(res || []));
+    }
+  }, [user]);
+
   const subtotal = calcSubtotal(invoice.items);
   const tax = calcTax(subtotal, invoice.taxPercent);
   const discount = calcDiscount(subtotal, invoice.discount);
@@ -57,9 +69,35 @@ export default function InvoiceForm() {
       <section>
         <h3 className="text-xs font-bold text-[#1A998F] uppercase tracking-widest mb-3">Billed To</h3>
         <div className="flex flex-col gap-3">
+          
           <div className="flex flex-col gap-1">
-            <label className="text-xs font-semibold text-[#6B7280] uppercase tracking-wide">Client Name</label>
-            <input className="input-field" {...clientField('name')} placeholder="Acme Corporation" />
+            <label className="text-xs font-semibold text-[#6B7280] uppercase tracking-wide">Select Existing Client</label>
+            <select
+              className="input-field mb-2"
+              onChange={(e) => {
+                const c = savedClients.find(client => client.id === e.target.value);
+                if (c) {
+                  updateClient({
+                    name: c.name || '',
+                    email: c.email || '',
+                    address: c.address || '',
+                    phone: c.phone || '',
+                    gstNumber: c.gstNumber || ''
+                  });
+                }
+              }}
+              defaultValue=""
+            >
+              <option value="" disabled>-- Select a client to auto-fill --</option>
+              {savedClients.map(c => (
+                <option key={c.id} value={c.id}>{c.name}</option>
+              ))}
+            </select>
+          </div>
+
+          <div className="flex flex-col gap-1">
+            <label className="text-xs font-semibold text-[#6B7280] uppercase tracking-wide">Client Name *</label>
+            <input className="input-field" {...clientField('name')} placeholder="Acme Corporation" required />
           </div>
           <div className="flex flex-col gap-1">
             <label className="text-xs font-semibold text-[#6B7280] uppercase tracking-wide">Email</label>

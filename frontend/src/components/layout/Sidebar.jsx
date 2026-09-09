@@ -23,14 +23,14 @@ export default function Sidebar() {
   const handleLogout = async () => {
     try {
       await logout();
-      navigate('/login');
+      navigate('/');
       toast.success('Signed out successfully');
     } catch {
       toast.error('Failed to sign out');
     }
   };
 
-  const displayName = user?.isAnonymous ? 'Guest User' : (user?.displayName || user?.email || 'User');
+  const displayName = user?.displayName || user?.email || 'User';
   const initials = displayName.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
 
   return (
@@ -43,9 +43,6 @@ export default function Sidebar() {
           </div>
           <div>
             <span className="text-white font-bold text-base tracking-tight">InvoiceAI</span>
-            {user?.isAnonymous && (
-              <span className="block text-[10px] text-teal-300 font-medium">Guest Mode</span>
-            )}
           </div>
         </div>
       </div>

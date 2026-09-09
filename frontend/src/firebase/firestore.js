@@ -6,8 +6,8 @@ import { db } from './config';
 
 // ── LocalStorage Mock Database ─────────────────────────────────────────────
 const mockStore = {
-  get: (key) => JSON.parse(localStorage.getItem(`invoice_ai_db_${key}`)) || [],
-  set: (key, data) => localStorage.setItem(`invoice_ai_db_${key}`, JSON.stringify(data)),
+  get: (uid, key) => JSON.parse(localStorage.getItem(`invoice_ai_db_${uid}_${key}`)) || [],
+  set: (uid, key, data) => localStorage.setItem(`invoice_ai_db_${uid}_${key}`, JSON.stringify(data)),
   
   getProfile: (uid) => JSON.parse(localStorage.getItem(`invoice_ai_profile_${uid}`)) || null,
   saveProfile: (uid, data) => localStorage.setItem(`invoice_ai_profile_${uid}`, JSON.stringify(data))
@@ -16,7 +16,20 @@ const mockStore = {
 // ── Profile ────────────────────────────────────────────────────────────────
 export const getProfile = async (uid) => {
   if (window.IS_MOCKED_FIREBASE) {
-    return mockStore.getProfile(uid);
+    let profile = mockStore.getProfile(uid);
+    if (!profile && uid === 'demo-user-id') {
+      profile = {
+        businessName: 'Demo User',
+        address: '',
+        gstNumber: '',
+        email: 'demouser',
+        defaultCurrency: 'INR',
+        logoUrl: '',
+        signatureUrl: ''
+      };
+      mockStore.saveProfile(uid, profile);
+    }
+    return profile;
   }
   const snap = await getDoc(doc(db, 'users', uid, 'profile', 'default'));
   return snap.exists() ? snap.data() : null;
@@ -32,10 +45,10 @@ export const saveProfile = async (uid, data) => {
 // ── Invoices ───────────────────────────────────────────────────────────────
 export const createInvoice = async (uid, data) => {
   if (window.IS_MOCKED_FIREBASE) {
-    const list = mockStore.get('invoices');
+    const list = mockStore.get(uid, 'invoices');
     const newDoc = { id: `inv-${Date.now()}`, ...data, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
     list.unshift(newDoc);
-    mockStore.set('invoices', list);
+    mockStore.set(uid, 'invoices', list);
     return { id: newDoc.id };
   }
   return addDoc(collection(db, 'users', uid, 'invoices'), { ...data, createdAt: serverTimestamp(), updatedAt: serverTimestamp() });
@@ -43,9 +56,9 @@ export const createInvoice = async (uid, data) => {
 
 export const updateInvoice = async (uid, invoiceId, data) => {
   if (window.IS_MOCKED_FIREBASE) {
-    const list = mockStore.get('invoices');
+    const list = mockStore.get(uid, 'invoices');
     const updated = list.map(item => item.id === invoiceId ? { ...item, ...data, updatedAt: new Date().toISOString() } : item);
-    mockStore.set('invoices', updated);
+    mockStore.set(uid, 'invoices', updated);
     return;
   }
   return updateDoc(doc(db, 'users', uid, 'invoices', invoiceId), { ...data, updatedAt: serverTimestamp() });
@@ -53,9 +66,9 @@ export const updateInvoice = async (uid, invoiceId, data) => {
 
 export const deleteInvoice = async (uid, invoiceId) => {
   if (window.IS_MOCKED_FIREBASE) {
-    const list = mockStore.get('invoices');
+    const list = mockStore.get(uid, 'invoices');
     const filtered = list.filter(item => item.id !== invoiceId);
-    mockStore.set('invoices', filtered);
+    mockStore.set(uid, 'invoices', filtered);
     return;
   }
   return deleteDoc(doc(db, 'users', uid, 'invoices', invoiceId));
@@ -63,7 +76,7 @@ export const deleteInvoice = async (uid, invoiceId) => {
 
 export const getInvoice = async (uid, invoiceId) => {
   if (window.IS_MOCKED_FIREBASE) {
-    const list = mockStore.get('invoices');
+    const list = mockStore.get(uid, 'invoices');
     return list.find(item => item.id === invoiceId) || null;
   }
   const snap = await getDoc(doc(db, 'users', uid, 'invoices', invoiceId));
@@ -72,7 +85,7 @@ export const getInvoice = async (uid, invoiceId) => {
 
 export const getInvoices = async (uid) => {
   if (window.IS_MOCKED_FIREBASE) {
-    return mockStore.get('invoices');
+    return mockStore.get(uid, 'invoices');
   }
   const q = query(collection(db, 'users', uid, 'invoices'), orderBy('createdAt', 'desc'));
   const snap = await getDocs(q);
@@ -82,10 +95,10 @@ export const getInvoices = async (uid) => {
 // ── Clients ────────────────────────────────────────────────────────────────
 export const createClient = async (uid, data) => {
   if (window.IS_MOCKED_FIREBASE) {
-    const list = mockStore.get('clients');
+    const list = mockStore.get(uid, 'clients');
     const newDoc = { id: `client-${Date.now()}`, ...data, createdAt: new Date().toISOString() };
     list.unshift(newDoc);
-    mockStore.set('clients', list);
+    mockStore.set(uid, 'clients', list);
     return { id: newDoc.id };
   }
   return addDoc(collection(db, 'users', uid, 'clients'), { ...data, createdAt: serverTimestamp() });
@@ -93,9 +106,9 @@ export const createClient = async (uid, data) => {
 
 export const updateClient = async (uid, clientId, data) => {
   if (window.IS_MOCKED_FIREBASE) {
-    const list = mockStore.get('clients');
+    const list = mockStore.get(uid, 'clients');
     const updated = list.map(item => item.id === clientId ? { ...item, ...data, updatedAt: new Date().toISOString() } : item);
-    mockStore.set('clients', updated);
+    mockStore.set(uid, 'clients', updated);
     return;
   }
   return updateDoc(doc(db, 'users', uid, 'clients', clientId), { ...data, updatedAt: serverTimestamp() });
@@ -103,9 +116,9 @@ export const updateClient = async (uid, clientId, data) => {
 
 export const deleteClient = async (uid, clientId) => {
   if (window.IS_MOCKED_FIREBASE) {
-    const list = mockStore.get('clients');
+    const list = mockStore.get(uid, 'clients');
     const filtered = list.filter(item => item.id !== clientId);
-    mockStore.set('clients', filtered);
+    mockStore.set(uid, 'clients', filtered);
     return;
   }
   return deleteDoc(doc(db, 'users', uid, 'clients', clientId));
@@ -113,7 +126,7 @@ export const deleteClient = async (uid, clientId) => {
 
 export const getClients = async (uid) => {
   if (window.IS_MOCKED_FIREBASE) {
-    return mockStore.get('clients');
+    return mockStore.get(uid, 'clients');
   }
   const q = query(collection(db, 'users', uid, 'clients'), orderBy('createdAt', 'desc'));
   const snap = await getDocs(q);
@@ -122,7 +135,7 @@ export const getClients = async (uid) => {
 
 export const getClient = async (uid, clientId) => {
   if (window.IS_MOCKED_FIREBASE) {
-    const list = mockStore.get('clients');
+    const list = mockStore.get(uid, 'clients');
     return list.find(item => item.id === clientId) || null;
   }
   const snap = await getDoc(doc(db, 'users', uid, 'clients', clientId));
@@ -132,10 +145,10 @@ export const getClient = async (uid, clientId) => {
 // ── Activity ───────────────────────────────────────────────────────────────
 export const logActivity = async (uid, data) => {
   if (window.IS_MOCKED_FIREBASE) {
-    const list = mockStore.get('activity');
+    const list = mockStore.get(uid, 'activity');
     const newDoc = { id: `act-${Date.now()}`, ...data, timestamp: new Date().toISOString() };
     list.unshift(newDoc);
-    mockStore.set('activity', list.slice(0, 50));
+    mockStore.set(uid, 'activity', list.slice(0, 50));
     return { id: newDoc.id };
   }
   return addDoc(collection(db, 'users', uid, 'activity'), { ...data, timestamp: serverTimestamp() });
@@ -143,7 +156,7 @@ export const logActivity = async (uid, data) => {
 
 export const getActivity = async (uid, n = 10) => {
   if (window.IS_MOCKED_FIREBASE) {
-    const list = mockStore.get('activity');
+    const list = mockStore.get(uid, 'activity');
     return list.slice(0, n);
   }
   const q = query(collection(db, 'users', uid, 'activity'), orderBy('timestamp', 'desc'), limit(n));

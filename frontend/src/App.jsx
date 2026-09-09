@@ -2,7 +2,6 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { PageLoader } from './components/ui/LoadingSpinner';
 import LandingPage from './pages/LandingPage';
-import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import InvoiceList from './pages/InvoiceList';
 import InvoiceEditor from './pages/InvoiceEditor';
@@ -17,16 +16,7 @@ function ProtectedRoute({ children }) {
   const { user, loading } = useAuth();
 
   if (loading) return <PageLoader />;
-  if (!user) return <Navigate to="/login" replace />;
-
-  return children;
-}
-
-function PublicRoute({ children }) {
-  const { user, loading } = useAuth();
-
-  if (loading) return <PageLoader />;
-  if (user) return <Navigate to="/dashboard" replace />;
+  if (!user) return <Navigate to="/" replace />;
 
   return children;
 }
@@ -39,12 +29,8 @@ export default function App() {
           {/* Landing Page */}
           <Route path="/" element={<LandingPage />} />
 
-          {/* Public Authentication Route */}
-          <Route path="/login" element={
-            <PublicRoute>
-              <Login />
-            </PublicRoute>
-          } />
+          {/* /login → redirect to landing page (auth is modal-only now) */}
+          <Route path="/login" element={<Navigate to="/" replace />} />
 
           {/* Protected Routes */}
           <Route path="/dashboard" element={

@@ -45,6 +45,32 @@ export default function LandingPage() {
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
+  const handleForgotPassword = async (e) => {
+    e.preventDefault();
+    if (!form.email) {
+      toast.error('Please enter your email address.');
+      return;
+    }
+    setLoading('reset');
+    try {
+      await resetPassword(form.email);
+      toast.success('Password reset email sent! Check your inbox.');
+      setAuthMode('signin');
+    } catch (err) {
+      const msg =
+        err.code === 'auth/user-not-found'
+          ? 'No account found with this email address.'
+          : err.code === 'auth/invalid-email'
+          ? 'Invalid email address.'
+          : err.code === 'auth/too-many-requests'
+          ? 'Too many requests. Please wait a moment before trying again.'
+          : err.message || 'Failed to send reset email. Please try again.';
+      toast.error(msg);
+    } finally {
+      setLoading('');
+    }
+  };
+
   const handleEmail = async (e) => {
     e.preventDefault();
     if (authMode === 'signup') {
@@ -52,7 +78,7 @@ export default function LandingPage() {
         toast.error('Full Name is required');
         return;
       }
-      if (!form.email || !form.email.includes('@')) {
+      if (!form.email || (!form.email.includes('@') && form.email !== 'demouser')) {
         toast.error('Please enter a valid email address');
         return;
       }
@@ -74,7 +100,7 @@ export default function LandingPage() {
         const uid = cred?.user?.uid;
         if (uid) {
           // Initialize business profile with appropriate empty/default values
-          await saveProfile(uid, {
+          const profilePromise = saveProfile(uid, {
             businessName: form.name,
             address: '',
             gstNumber: '',
@@ -83,12 +109,20 @@ export default function LandingPage() {
             logoUrl: '',
             signatureUrl: ''
           });
+          
+          // Timeout after 5 seconds if Firestore is unreachable
+          const timeoutPromise = new Promise((_, reject) => 
+            setTimeout(() => reject(new Error('Firestore connection timed out. Please ensure Cloud Firestore is enabled in your Firebase project.')), 5000)
+          );
+          
+          await Promise.race([profilePromise, timeoutPromise]);
         }
       }
       setShowAuthModal(false);
       goDashboard();
       toast.success(authMode === 'signin' ? 'Welcome back!' : 'Account created successfully!');
     } catch (err) {
+      console.error("Auth error:", err);
       const msg =
         err.code === 'auth/configuration-not-found' || err.code === 'auth/operation-not-allowed'
           ? 'Email sign-in is not enabled. Please enable it in Firebase Console → Authentication → Sign-in method.'
@@ -139,13 +173,9 @@ export default function LandingPage() {
           <div className="flex items-center gap-3">
             <button
               onClick={() => {
-                if (user) {
-                  goDashboard();
-                } else {
-                  setForm({ name: '', email: '', password: '', confirmPassword: '' });
-                  setAuthMode('signin');
-                  setShowAuthModal(true);
-                }
+                setForm({ name: '', email: '', password: '', confirmPassword: '' });
+                setAuthMode('signin');
+                setShowAuthModal(true);
               }}
               className="btn-secondary !border-transparent hover:!bg-[#E6F4F3] !text-[#102E3C] font-semibold text-sm"
             >
@@ -153,13 +183,9 @@ export default function LandingPage() {
             </button>
             <button
               onClick={() => {
-                if (user) {
-                  goDashboard();
-                } else {
-                  setForm({ name: '', email: '', password: '', confirmPassword: '' });
-                  setAuthMode('signup');
-                  setShowAuthModal(true);
-                }
+                setForm({ name: '', email: '', password: '', confirmPassword: '' });
+                setAuthMode('signup');
+                setShowAuthModal(true);
               }}
               className="btn-primary text-sm font-semibold"
             >
@@ -194,13 +220,9 @@ export default function LandingPage() {
         <div className="flex items-center justify-center mb-16 animate-slide-up delay-300">
           <button
             onClick={() => {
-              if (user) {
-                goDashboard();
-              } else {
-                setForm({ name: '', email: '', password: '', confirmPassword: '' });
-                setAuthMode('signup');
-                setShowAuthModal(true);
-              }
+              setForm({ name: '', email: '', password: '', confirmPassword: '' });
+              setAuthMode('signup');
+              setShowAuthModal(true);
             }}
             className="btn-primary px-8 py-3.5 !text-base !rounded-xl shadow-lg shadow-teal-600/25 justify-center group"
           >
@@ -395,10 +417,14 @@ export default function LandingPage() {
                 <Zap size={22} className="text-white" fill="white" />
               </div>
               <h2 className="text-xl font-bold text-[#102E3C]">
-                {authMode === 'signin' ? 'Welcome Back' : authMode === 'signup' ? 'Create Account' : 'Reset Password'}
+                {authMode === 'signin' ? 'Welcome Back 👋' : authMode === 'signup' ? 'Create your account 🚀' : 'Reset Password'}
               </h2>
               <p className="text-xs text-[#6B7280] mt-1">
-                {authMode === 'forgot' ? "We'll send a reset link to your email" : 'Sign in to save and sync your invoices'}
+                {authMode === 'signin'
+                  ? 'Sign in to your account'
+                  : authMode === 'signup'
+                  ? 'Join thousands of freelancers using InvoiceAI'
+                  : "We'll send a reset link to your email"}
               </p>
             </div>
 
@@ -412,7 +438,7 @@ export default function LandingPage() {
                   <div className="relative">
                     <Mail size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#9CA3AF]" />
                     <input
-                      type="email"
+                      type="text"
                       placeholder="Email address"
                       required
                       value={form.email}
@@ -459,7 +485,7 @@ export default function LandingPage() {
                   <div className="relative">
                     <Mail size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#9CA3AF]" />
                     <input
-                      type="email"
+                      type="text"
                       placeholder="Email address"
                       required
                       value={form.email}

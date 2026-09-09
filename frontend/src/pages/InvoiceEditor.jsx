@@ -74,6 +74,12 @@ function EditorContent({ mode, profile }) {
 
   const handleSave = async (newStatus) => {
     if (!user) return;
+    
+    if (!invoice.client?.name?.trim()) {
+      toast.error('Client name is required.');
+      return;
+    }
+
     setSaving(true);
     try {
       const data = invoiceToFirestore(

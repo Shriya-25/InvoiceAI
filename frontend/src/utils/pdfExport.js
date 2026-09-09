@@ -29,17 +29,38 @@ export async function exportInvoicePDF(invoice, profile = {}) {
     doc.roundedRect(x, y, w, h, 2, 2, 'F');
   };
 
+  // Pre-calculate header height based on lines and logo
+  const lines = [];
+  if (profile.address) lines.push(profile.address);
+  if (profile.gstNumber) lines.push(`GST: ${profile.gstNumber}`);
+  if (profile.email) lines.push(profile.email);
+  if (profile.primaryContact) lines.push(profile.primaryContact);
+  if (profile.alternateContact) lines.push(profile.alternateContact);
+  if (profile.website) lines.push(profile.website);
+
+  const hasLogo = !!profile.logoUrl;
+  const headerHeight = Math.max(38, (hasLogo ? 30 : 16) + (lines.length * 5) + 10);
+
   // Header bar
-  rect(0, 0, W, 38, primary);
+  rect(0, 0, W, headerHeight, primary);
 
-  // Business name / brand
+  // Business name & logo
+  let headerY = 16;
+  if (hasLogo) {
+    try {
+      doc.addImage(profile.logoUrl, 'PNG', margin, 8, 20, 20);
+      headerY = 36;
+    } catch (e) { console.error('Logo err', e); }
+  }
+
   setFont(20, 'bold', [255, 255, 255]);
-  doc.text(profile.businessName || 'Your Business', margin, 16);
-
+  doc.text(profile.businessName || 'Your Business', margin, headerY);
+  
+  headerY += 6;
   setFont(8, 'normal', [230, 244, 243]);
-  if (profile.address) doc.text(profile.address, margin, 22);
-  if (profile.gstNumber) doc.text(`GST: ${profile.gstNumber}`, margin, 27);
-  if (profile.email) doc.text(profile.email, margin, 32);
+  lines.forEach((l, i) => {
+    doc.text(l, margin, headerY + (i * 4.5));
+  });
 
   // INVOICE label top-right
   setFont(22, 'bold', [255, 255, 255]);
@@ -47,7 +68,7 @@ export async function exportInvoicePDF(invoice, profile = {}) {
   setFont(9, 'normal', [230, 244, 243]);
   doc.text(`#${invoice.invoiceNumber}`, W - margin, 23, { align: 'right' });
 
-  y = 48;
+  y = headerHeight + 10;
 
   // Bill To + Invoice Details
   setFont(7, 'bold', textMid);
@@ -158,6 +179,17 @@ export async function exportInvoicePDF(invoice, profile = {}) {
       doc.text(notesLines, margin, y + 5);
       y += notesLines.length * 5 + 10;
     }
+  }
+
+  // Signature
+  if (profile.signatureUrl) {
+    y += 10;
+    try {
+      doc.addImage(profile.signatureUrl, 'PNG', margin, y, 30, 15);
+      y += 18;
+    } catch (e) { console.error('Sig err', e); y += 5; }
+    setFont(7, 'italic', textMid);
+    doc.text('Authorized Signature', margin, y);
   }
 
   // Footer

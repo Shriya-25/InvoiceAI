@@ -16,12 +16,15 @@ export default function InvoicePreview({ profile = {} }) {
         <div className="flex justify-between items-start">
           <div>
             {profile.logoUrl && (
-              <img src={profile.logoUrl} alt="Logo" className="h-10 mb-2 object-contain" />
+              <img src={profile.logoUrl} alt="Logo" className="h-10 mb-2 object-contain" onError={(e) => { e.target.style.display = 'none'; }} />
             )}
             <h1 className="text-xl font-bold">{profile.businessName || 'Your Business'}</h1>
             {profile.address && <p className="text-teal-100 text-xs mt-1 whitespace-pre-line">{profile.address}</p>}
             {profile.gstNumber && <p className="text-teal-100 text-xs">GST: {profile.gstNumber}</p>}
             {profile.email && <p className="text-teal-100 text-xs">{profile.email}</p>}
+            {profile.primaryContact && <p className="text-teal-100 text-xs">{profile.primaryContact}</p>}
+            {profile.alternateContact && <p className="text-teal-100 text-xs">{profile.alternateContact}</p>}
+            {profile.website && <p className="text-teal-100 text-xs">{profile.website}</p>}
           </div>
           <div className="text-right">
             <h2 className="text-3xl font-black tracking-tight opacity-90">INVOICE</h2>
@@ -128,7 +131,7 @@ export default function InvoicePreview({ profile = {} }) {
       {/* Signature */}
       {profile.signatureUrl && (
         <div className="px-8 py-4 border-t border-[#F3F4F6]">
-          <img src={profile.signatureUrl} alt="Signature" className="h-12 object-contain" />
+          <img src={profile.signatureUrl} alt="Signature" className="h-12 object-contain" onError={(e) => { e.target.style.display = 'none'; }} />
           <p className="text-[10px] text-[#9CA3AF] mt-1">Authorized Signature</p>
         </div>
       )}

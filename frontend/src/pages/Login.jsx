@@ -22,7 +22,7 @@ export default function Login() {
         toast.error('Full Name is required');
         return;
       }
-      if (!form.email || !form.email.includes('@')) {
+      if (!form.email || (!form.email.includes('@') && form.email !== 'demouser')) {
         toast.error('Please enter a valid email address');
         return;
       }
@@ -152,7 +152,7 @@ export default function Login() {
                   <Mail size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#9CA3AF]" />
                   <input
                     id="input-reset-email"
-                    type="email"
+                    type="text"
                     placeholder="Email address"
                     required
                     value={form.email}
@@ -206,7 +206,7 @@ export default function Login() {
                   <Mail size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#9CA3AF]" />
                   <input
                     id="input-email"
-                    type="email"
+                    type="text"
                     placeholder="Email address"
                     required
                     value={form.email}

@@ -17,8 +17,27 @@ export default function BusinessProfile() {
     email: '',
     defaultCurrency: 'INR',
     logoUrl: '',
-    signatureUrl: ''
+    signatureUrl: '',
+    primaryContact: '',
+    alternateContact: '',
+    website: ''
   });
+
+  const handleImageUpload = (e, field) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    if (file.size > 1024 * 1024) {
+      toast.error('Image is too large. Please upload an image under 1MB.');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      setProfile(prev => ({ ...prev, [field]: event.target.result }));
+    };
+    reader.readAsDataURL(file);
+  };
 
   useEffect(() => {
     if (!user) return;
@@ -103,6 +122,39 @@ export default function BusinessProfile() {
               </div>
             </div>
 
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="flex flex-col gap-1">
+                <label className="text-xs font-semibold text-[#6B7280] uppercase tracking-wide">Primary Contact Number</label>
+                <input
+                  className="input-field"
+                  value={profile.primaryContact || ''}
+                  onChange={e => setProfile({ ...profile, primaryContact: e.target.value })}
+                  placeholder="+91 98765 43210"
+                />
+              </div>
+
+              <div className="flex flex-col gap-1">
+                <label className="text-xs font-semibold text-[#6B7280] uppercase tracking-wide">Alternate Contact Number</label>
+                <input
+                  className="input-field"
+                  value={profile.alternateContact || ''}
+                  onChange={e => setProfile({ ...profile, alternateContact: e.target.value })}
+                  placeholder="+91 98765 00000"
+                />
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-1">
+              <label className="text-xs font-semibold text-[#6B7280] uppercase tracking-wide">Business Website / URL</label>
+              <input
+                type="url"
+                className="input-field"
+                value={profile.website || ''}
+                onChange={e => setProfile({ ...profile, website: e.target.value })}
+                placeholder="https://www.pixelkraft.com"
+              />
+            </div>
+
             <div className="flex flex-col gap-1">
               <label className="text-xs font-semibold text-[#6B7280] uppercase tracking-wide">Business Address</label>
               <textarea
@@ -131,36 +183,38 @@ export default function BusinessProfile() {
           {/* Logo & Signature links */}
           <div className="card p-6 flex flex-col gap-4">
             <h2 className="text-xs font-bold text-[#6B7280] uppercase tracking-wider mb-2 flex items-center gap-1.5">
-              <Image size={14} /> Logo & Signature URLs
+              <Image size={14} /> Logo & Signature
             </h2>
-            <p className="text-xs text-[#6B7280]">Provide absolute image URLs to display custom logos and signature on PDF templates.</p>
+            <p className="text-xs text-[#6B7280]">Upload your custom logo and signature for PDF templates. Images will be automatically resized.</p>
 
             <div className="flex flex-col gap-1">
-              <label className="text-xs font-semibold text-[#6B7280] uppercase tracking-wide">Logo URL</label>
+              <label className="text-xs font-semibold text-[#6B7280] uppercase tracking-wide">Logo Image</label>
               <input
-                className="input-field"
-                value={profile.logoUrl}
-                onChange={e => setProfile({ ...profile, logoUrl: e.target.value })}
-                placeholder="https://example.com/logo.png"
+                type="file"
+                accept="image/*"
+                className="input-field file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                onChange={e => handleImageUpload(e, 'logoUrl')}
               />
               {profile.logoUrl && (
-                <div className="mt-2 p-2 bg-[#F7F9FC] rounded border border-[#E5E7EB] w-fit">
-                  <img src={profile.logoUrl} alt="Logo preview" className="h-10 object-contain" onError={(e) => {e.target.style.display='none';}} />
+                <div className="mt-2 p-4 bg-[#F7F9FC] rounded-lg border border-dashed border-[#E5E7EB] w-fit flex flex-col items-center gap-2">
+                  <span className="text-[10px] font-bold text-[#9CA3AF] uppercase tracking-wider">Preview (Max 400x400)</span>
+                  <img src={profile.logoUrl} alt="Logo preview" className="max-h-24 max-w-[200px] object-contain" onError={(e) => {e.target.style.display='none';}} />
                 </div>
               )}
             </div>
 
             <div className="flex flex-col gap-1">
-              <label className="text-xs font-semibold text-[#6B7280] uppercase tracking-wide">Authorized Signature URL</label>
+              <label className="text-xs font-semibold text-[#6B7280] uppercase tracking-wide">Authorized Signature Image</label>
               <input
-                className="input-field"
-                value={profile.signatureUrl}
-                onChange={e => setProfile({ ...profile, signatureUrl: e.target.value })}
-                placeholder="https://example.com/sig.png"
+                type="file"
+                accept="image/*"
+                className="input-field file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                onChange={e => handleImageUpload(e, 'signatureUrl')}
               />
               {profile.signatureUrl && (
-                <div className="mt-2 p-2 bg-[#F7F9FC] rounded border border-[#E5E7EB] w-fit">
-                  <img src={profile.signatureUrl} alt="Signature preview" className="h-10 object-contain" onError={(e) => {e.target.style.display='none';}} />
+                <div className="mt-2 p-4 bg-[#F7F9FC] rounded-lg border border-dashed border-[#E5E7EB] w-fit flex flex-col items-center gap-2">
+                  <span className="text-[10px] font-bold text-[#9CA3AF] uppercase tracking-wider">Preview (Max 400x400)</span>
+                  <img src={profile.signatureUrl} alt="Signature preview" className="max-h-16 max-w-[200px] object-contain" onError={(e) => {e.target.style.display='none';}} />
                 </div>
               )}
             </div>
