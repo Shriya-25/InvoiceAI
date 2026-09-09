@@ -10,7 +10,7 @@ export default function InvoicePreview({ profile = {} }) {
   const total = calcTotal(invoice);
 
   return (
-    <div className="invoice-paper bg-white rounded-xl overflow-hidden shadow-[0_4px_24px_rgba(0,0,0,0.08)] border border-[#E5E7EB]">
+    <div id="invoice-preview" className="invoice-paper bg-white rounded-xl overflow-hidden shadow-[0_4px_24px_rgba(0,0,0,0.08)] border border-[#E5E7EB]">
       {/* Header */}
       <div className="bg-[#1A998F] text-white px-8 py-6">
         <div className="flex justify-between items-start">
