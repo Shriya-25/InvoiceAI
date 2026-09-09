@@ -17,11 +17,20 @@ const DEFAULT_INVOICE = {
   source: 'manual',
 };
 
-export function InvoiceProvider({ children }) {
-  const [invoice, setInvoice] = useState({
-    ...DEFAULT_INVOICE,
-    invoiceNumber: generateInvoiceNumber(),
-    dueDate: new Date(Date.now() + 15 * 86400000).toISOString().split('T')[0],
+export function InvoiceProvider({ children, initialInvoice }) {
+  const [invoice, setInvoice] = useState(() => {
+    if (initialInvoice) {
+      return {
+        ...DEFAULT_INVOICE,
+        ...initialInvoice,
+        items: (initialInvoice.items || []).map((item, i) => ({ id: i + 1, ...item })),
+      };
+    }
+    return {
+      ...DEFAULT_INVOICE,
+      invoiceNumber: generateInvoiceNumber(),
+      dueDate: new Date(Date.now() + 15 * 86400000).toISOString().split('T')[0],
+    };
   });
 
   const updateInvoice = (patch) => setInvoice(prev => ({ ...prev, ...patch }));

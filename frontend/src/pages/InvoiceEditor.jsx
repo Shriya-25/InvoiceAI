@@ -249,7 +249,7 @@ export default function InvoiceEditor() {
 
   return (
     <AppLayout>
-      <InvoiceProvider>
+      <InvoiceProvider initialInvoice={initInvoice}>
         <EditorContent mode={mode} profile={profile} />
       </InvoiceProvider>
     </AppLayout>

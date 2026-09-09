@@ -161,7 +161,7 @@ export default function ClientDetail() {
                     return (
                       <Link
                         key={inv.id}
-                        to={`/invoices/${inv.id}`}
+                        to={`/invoices/${inv.id}?mode=view`}
                         className="grid grid-cols-[1fr_120px_100px_100px] gap-4 items-center px-5 py-3.5 border-b border-[#F3F4F6] last:border-0 hover:bg-[#FAFAFA] transition-colors"
                       >
                         <span className="text-sm font-semibold text-[#1A998F] hover:underline">{inv.invoiceNumber}</span>
