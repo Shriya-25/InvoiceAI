@@ -161,7 +161,7 @@ function EditorContent({ mode, profile }) {
           {mode !== 'view' && (
             <button
               id="btn-save-draft"
-              onClick={() => handleSave('draft')}
+              onClick={() => handleSave()}
               disabled={saving}
               className="btn-secondary"
             >

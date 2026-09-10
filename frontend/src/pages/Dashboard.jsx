@@ -83,7 +83,7 @@ export default function Dashboard() {
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h1 className="text-2xl font-bold text-[#0F1115]">Good {getGreeting()}, {displayName} 👋</h1>
+            <h1 className="text-2xl font-bold text-[#0F1115]">Good {getGreeting()}, {displayName}</h1>
             <p className="text-sm text-[#6B7280] mt-0.5">Here's your invoice overview for today</p>
           </div>
           <Link to="/new-invoice" id="btn-new-invoice-dashboard">
