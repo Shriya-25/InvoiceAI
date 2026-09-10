@@ -7,7 +7,7 @@ import {
 import AppLayout from '../components/layout/AppLayout';
 import Badge from '../components/ui/Badge';
 import { useAuth } from '../context/AuthContext';
-import { getInvoices, getActivity } from '../firebase/firestore';
+import { getInvoices, getActivity, getProfile } from '../firebase/firestore';
 import { formatCurrency, formatRelativeTime } from '../utils/formatters';
 import { calcTotal, getEffectiveStatus } from '../utils/invoiceHelpers';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
@@ -18,13 +18,19 @@ export default function Dashboard() {
   const { user } = useAuth();
   const [invoices, setInvoices] = useState([]);
   const [activity, setActivity] = useState([]);
+  const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (!user) return;
-    Promise.all([getInvoices(user.uid), getActivity(user.uid, 8)]).then(([inv, act]) => {
+    Promise.all([
+      getInvoices(user.uid),
+      getActivity(user.uid, 8),
+      getProfile(user.uid)
+    ]).then(([inv, act, prof]) => {
       setInvoices(inv);
       setActivity(act);
+      setProfile(prof);
       setLoading(false);
     }).catch(() => setLoading(false));
   }, [user]);
@@ -61,7 +67,7 @@ export default function Dashboard() {
   }
 
   const recentInvoices = invoices.slice(0, 5);
-  const displayName = user?.displayName?.split(' ')[0] || 'there';
+  const displayName = profile?.businessName || user?.displayName?.split(' ')[0] || 'there';
 
   const STAT_CARDS = [
     { label: 'Total Invoiced', value: formatCurrency(stats.total), icon: DollarSign, color: 'blue', change: `${invoices.length} invoices` },

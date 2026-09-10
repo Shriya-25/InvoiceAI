@@ -1,10 +1,12 @@
 import { NavLink, useNavigate } from 'react-router-dom';
+import { useEffect, useState } from 'react';
 import {
   LayoutDashboard, FileText, PlusCircle, Users, Settings,
   Sparkles, LogOut, ChevronRight, Zap
 } from 'lucide-react';
 import { logout } from '../../firebase/auth';
 import { useAuth } from '../../context/AuthContext';
+import { getProfile } from '../../firebase/firestore';
 import toast from 'react-hot-toast';
 
 const NAV_ITEMS = [
@@ -19,6 +21,13 @@ const NAV_ITEMS = [
 export default function Sidebar() {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const [profile, setProfile] = useState(null);
+
+  useEffect(() => {
+    if (user) {
+      getProfile(user.uid).then(p => setProfile(p));
+    }
+  }, [user]);
 
   const handleLogout = async () => {
     try {
@@ -30,8 +39,9 @@ export default function Sidebar() {
     }
   };
 
-  const displayName = user?.displayName || user?.email || 'User';
+  const displayName = profile?.businessName || user?.displayName || user?.email || 'User';
   const initials = displayName.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
+  const displayImage = profile?.logoUrl || user?.photoURL;
 
   return (
     <aside className="fixed top-0 left-0 h-screen w-60 bg-[#102E3C] flex flex-col z-40 select-none">
@@ -73,8 +83,8 @@ export default function Sidebar() {
       <div className="px-3 py-4 border-t border-white/10">
         <div className="flex items-center gap-3 px-2 py-2 rounded-lg mb-2">
           <div className="w-8 h-8 rounded-full bg-[#1A998F] flex items-center justify-center shrink-0">
-            {user?.photoURL ? (
-              <img src={user.photoURL} alt={initials} className="w-8 h-8 rounded-full object-cover" />
+            {displayImage ? (
+              <img src={displayImage} alt={initials} className="w-8 h-8 rounded-full object-cover bg-white" />
             ) : (
               <span className="text-xs font-bold text-white">{initials}</span>
             )}
