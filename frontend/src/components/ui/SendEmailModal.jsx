@@ -46,10 +46,17 @@ export default function SendEmailModal({ open, onClose, invoice, profile }) {
     }
 
     setSending(true);
+    let pdfBase64;
     try {
       // Generate PDF Base64
-      const pdfBase64 = await getInvoicePDFBase64(invoice, profile);
-      
+      pdfBase64 = await getInvoicePDFBase64(invoice, profile);
+    } catch (error) {
+      toast.error(`Failed to generate PDF: ${error.message}`);
+      setSending(false);
+      return;
+    }
+
+    try {
       const payload = {
         to,
         subject,
