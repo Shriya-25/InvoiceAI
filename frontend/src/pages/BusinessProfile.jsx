@@ -3,6 +3,7 @@ import { Save, Building, Image, Edit } from 'lucide-react';
 import AppLayout from '../components/layout/AppLayout';
 import { useAuth } from '../context/AuthContext';
 import { getProfile, saveProfile, logActivity } from '../firebase/firestore';
+import { Select } from '../components/ui/Input';
 import { CURRENCIES } from '../utils/formatters';
 import toast from 'react-hot-toast';
 
@@ -167,16 +168,15 @@ export default function BusinessProfile() {
             </div>
 
             <div className="flex flex-col gap-1">
-              <label className="text-xs font-semibold text-[#6B7280] uppercase tracking-wide">Default Currency</label>
-              <select
-                className="input-field"
+              <Select
+                label="Default Currency"
                 value={profile.defaultCurrency}
                 onChange={e => setProfile({ ...profile, defaultCurrency: e.target.value })}
               >
                 {CURRENCIES.map(c => (
                   <option key={c.code} value={c.code}>{c.code} — {c.name}</option>
                 ))}
-              </select>
+              </Select>
             </div>
           </div>
 

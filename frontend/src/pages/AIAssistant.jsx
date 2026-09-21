@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
-import { Sparkles, Type, Clock, FileCheck, Mail, Copy, CheckCheck, Loader2, Key, AlertCircle } from 'lucide-react';
+import { Sparkles, Type, Clock, FileCheck, Mail, Copy, CheckCheck, Loader2 } from 'lucide-react';
 import AppLayout from '../components/layout/AppLayout';
-import ApiKeySettings from '../components/ui/ApiKeySettings';
 import { generateDescriptionAI, suggestTermsAI, generateNotesAI, generateEmailAI } from '../utils/api';
+import { getClients, getInvoices } from '../firebase/firestore';
+import { useAuth } from '../context/AuthContext';
+import { Select } from '../components/ui/Input';
 import toast from 'react-hot-toast';
 
 const TOOLS = [
@@ -13,45 +15,59 @@ const TOOLS = [
 ];
 
 export default function AIAssistant() {
+  const { user } = useAuth();
   const [activeTool, setActiveTool] = useState('description');
   const [input, setInput] = useState('');
+  const [selectedClient, setSelectedClient] = useState('');
+  const [selectedInvoice, setSelectedInvoice] = useState('');
+  const [clients, setClients] = useState([]);
+  const [invoices, setInvoices] = useState([]);
+  
   const [result, setResult] = useState('');
   const [loading, setLoading] = useState(false);
   const [copied, setCopied] = useState(false);
-  const [hasApiKey, setHasApiKey] = useState(false);
-  const [showSettings, setShowSettings] = useState(false);
 
   useEffect(() => {
-    setHasApiKey(!!localStorage.getItem('invoice_ai_gemini_key'));
-  }, []);
+    if (user) {
+      getClients(user.uid).then(res => setClients(res || []));
+      getInvoices(user.uid).then(res => setInvoices(res || []));
+    }
+  }, [user]);
 
   const run = async () => {
-    if (!hasApiKey) {
-      setShowSettings(true);
-      return toast.error('Please configure your Gemini API key first');
-    }
-    if (activeTool === 'description' && !input.trim()) {
-      return toast.error('Please enter a description input');
-    }
     setLoading(true);
     setResult('');
     try {
       let output;
       if (activeTool === 'description') {
-        output = await generateDescriptionAI(input);
+        if (!input.trim()) return toast.error('Please enter a description first.');
+        const res = await generateDescriptionAI(input);
+        output = res.description;
       } else if (activeTool === 'terms') {
-        const data = await suggestTermsAI({ client: { name: input || 'Client' } });
-        output = `Suggested terms: ${data.terms}\nReasoning: ${data.reason}`;
+        let contextData = {};
+        if (selectedClient) {
+          const clientData = clients.find(c => c.id === selectedClient);
+          contextData = { client: clientData, notes: input };
+        } else {
+          contextData = { notes: input };
+        }
+        const res = await suggestTermsAI(contextData);
+        output = res.paymentTerms;
       } else if (activeTool === 'notes') {
-        output = await generateNotesAI({ notes: input });
+        const res = await generateNotesAI({ additionalContext: input });
+        output = res.note;
       } else if (activeTool === 'email') {
-        output = await generateEmailAI({ client: { name: 'Client' }, items: [{ description: input || 'Services', quantity: 1, rate: 1000 }] });
+        if (!selectedInvoice) return toast.error('Please select an invoice first.');
+        const invoiceData = invoices.find(i => i.id === selectedInvoice);
+        const res = await generateEmailAI(invoiceData);
+        output = `Subject: ${res.subject}\n\n${res.body}`;
       }
       setResult(output);
-    } catch {
-      toast.error('AI assistant route failed. Check server is active on 5001.');
+    } catch (err) {
+      toast.error(err.response?.data?.error || 'AI generation is temporarily unavailable. Please try again.');
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   const copy = () => {
@@ -73,38 +89,7 @@ export default function AIAssistant() {
             <h1 className="text-2xl font-bold text-[#102E3C]">AI Assistant Playground</h1>
             <p className="text-sm text-[#6B7280]">Run standalone copy-ready invoice generators powered by Gemini</p>
           </div>
-          <button
-            onClick={() => setShowSettings(s => !s)}
-            className={`btn-secondary !py-2 !px-3 text-xs ${hasApiKey ? '' : '!border-amber-300 !bg-amber-50 !text-amber-700'}`}
-          >
-            <Key size={14} />
-            {hasApiKey ? 'API Key Settings' : 'Set API Key'}
-          </button>
         </div>
-
-        {/* API Key Warning Banner */}
-        {!hasApiKey && !showSettings && (
-          <div className="mb-6 flex items-center gap-3 p-4 rounded-xl bg-amber-50 border border-amber-200 animate-fade-in">
-            <AlertCircle size={18} className="text-amber-600 flex-shrink-0" />
-            <div className="flex-1">
-              <p className="text-sm font-semibold text-amber-800">Gemini API Key Required</p>
-              <p className="text-xs text-amber-600 mt-0.5">You need to configure your API key to use AI features.</p>
-            </div>
-            <button onClick={() => setShowSettings(true)} className="btn-primary !py-1.5 !px-3 text-xs !bg-amber-600 hover:!bg-amber-700">
-              Configure Now
-            </button>
-          </div>
-        )}
-
-        {/* API Key Settings Panel */}
-        {showSettings && (
-          <div className="mb-6 animate-fade-in">
-            <ApiKeySettings onKeyChange={(key) => {
-              setHasApiKey(!!key);
-              if (key) setShowSettings(false);
-            }} />
-          </div>
-        )}
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {/* Menu */}
@@ -135,20 +120,55 @@ export default function AIAssistant() {
           {/* Workbench */}
           <div className="md:col-span-2 flex flex-col gap-4">
             <div className="card p-5">
-              <h2 className="text-xs font-bold text-[#6B7280] uppercase tracking-wider mb-3">Input Context</h2>
-              
-              <textarea
-                rows={4}
-                className="input-field resize-none w-full"
-                value={input}
-                onChange={e => setInput(e.target.value)}
-                placeholder={
-                  activeTool === 'description' ? 'e.g. built login page for react app using tailwind css' :
-                  activeTool === 'terms' ? 'Enter client name or business profile details' :
-                  activeTool === 'notes' ? 'Enter raw payment notes, bank info, or specific requirements' :
-                  'Enter brief summary of work done or item details'
-                }
-              />
+              {activeTool === 'email' && (
+                <div className="mb-3">
+                  <label className="text-xs font-bold text-[#6B7280] uppercase tracking-wider mb-2 block">Select Invoice</label>
+                  <Select 
+                    className="w-full" 
+                    value={selectedInvoice} 
+                    onChange={e => setSelectedInvoice(e.target.value)}
+                  >
+                    <option value="">-- Choose an invoice --</option>
+                    {invoices.map(inv => (
+                      <option key={inv.id} value={inv.id}>{inv.invoiceNumber || 'Draft'} - {inv.client?.name || 'Unknown'}</option>
+                    ))}
+                  </Select>
+                </div>
+              )}
+
+              {activeTool === 'terms' && (
+                <div className="mb-3">
+                  <label className="text-xs font-bold text-[#6B7280] uppercase tracking-wider mb-2 block">Select Client (Optional)</label>
+                  <Select 
+                    className="w-full" 
+                    value={selectedClient} 
+                    onChange={e => setSelectedClient(e.target.value)}
+                  >
+                    <option value="">-- No specific client --</option>
+                    {clients.map(c => (
+                      <option key={c.id} value={c.id}>{c.name}</option>
+                    ))}
+                  </Select>
+                </div>
+              )}
+
+              {activeTool !== 'email' && (
+                <>
+                  <label className="text-xs font-bold text-[#6B7280] uppercase tracking-wider mb-2 block">Input Context</label>
+                  <textarea
+                    rows={4}
+                    className="input-field resize-none w-full"
+                    value={input}
+                    onChange={e => setInput(e.target.value)}
+                    placeholder={
+                      activeTool === 'description' ? 'e.g. built login page for react app using tailwind css' :
+                      activeTool === 'terms' ? 'Enter any additional client context (optional)' :
+                      activeTool === 'notes' ? 'Enter raw payment notes, bank info, or specific requirements' :
+                      ''
+                    }
+                  />
+                </>
+              )}
 
               <button
                 onClick={run}
@@ -163,7 +183,7 @@ export default function AIAssistant() {
                 ) : (
                   <>
                     <Sparkles size={16} />
-                    Run Generator
+                    Generate with AI
                   </>
                 )}
               </button>
@@ -176,10 +196,16 @@ export default function AIAssistant() {
                   <span className="text-xs font-bold text-[#1A998F] flex items-center gap-1.5">
                     <Sparkles size={13} /> AI Generated Output
                   </span>
-                  <button onClick={copy} className="btn-secondary !py-1 !px-2.5 flex items-center gap-1 text-xs">
-                    {copied ? <CheckCheck size={13} className="text-green-600" /> : <Copy size={13} />}
-                    {copied ? 'Copied' : 'Copy'}
-                  </button>
+                  <div className="flex gap-2">
+                    <button onClick={run} className="btn-secondary !py-1 !px-2.5 flex items-center gap-1 text-xs">
+                      <Sparkles size={13} />
+                      Regenerate
+                    </button>
+                    <button onClick={copy} className="btn-primary !py-1 !px-2.5 flex items-center gap-1 text-xs">
+                      {copied ? <CheckCheck size={13} className="text-white" /> : <Copy size={13} />}
+                      {copied ? 'Copied' : 'Copy'}
+                    </button>
+                  </div>
                 </div>
                 <div className="p-5 text-sm text-[#102E3C] leading-relaxed whitespace-pre-wrap">
                   {result}

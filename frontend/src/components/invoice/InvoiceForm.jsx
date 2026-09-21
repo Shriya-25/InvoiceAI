@@ -1,4 +1,4 @@
-import { Plus } from 'lucide-react';
+import { Plus, Sparkles } from 'lucide-react';
 import { useInvoice } from '../../context/InvoiceContext';
 import { useAuth } from '../../context/AuthContext';
 import { getClients } from '../../firebase/firestore';
@@ -8,11 +8,14 @@ import { Select } from '../ui/Input';
 import { CURRENCIES } from '../../utils/formatters';
 import { calcSubtotal, calcTax, calcDiscount, calcTotal } from '../../utils/invoiceHelpers';
 import { formatCurrency } from '../../utils/formatters';
+import AIGeneratorModal from '../ui/AIGeneratorModal';
+import { suggestTermsAI, generateNotesAI } from '../../utils/api';
 
 export default function InvoiceForm() {
   const { invoice, updateInvoice, updateClient, addItem } = useInvoice();
   const { user } = useAuth();
   const [savedClients, setSavedClients] = useState([]);
+  const [aiModal, setAiModal] = useState(null); // 'terms' | 'notes' | null
   
   useEffect(() => {
     if (user) {
@@ -53,15 +56,12 @@ export default function InvoiceForm() {
               <option key={c.code} value={c.code}>{c.code} — {c.name}</option>
             ))}
           </Select>
-          <div className="flex flex-col gap-1">
-            <label className="text-xs font-semibold text-[#6B7280] uppercase tracking-wide">Status</label>
-            <select className="input-field" {...field('status')}>
-              <option value="draft">Draft</option>
-              <option value="pending">Pending</option>
-              <option value="paid">Paid</option>
-              <option value="archived">Archived</option>
-            </select>
-          </div>
+          <Select label="Status" {...field('status')}>
+            <option value="draft">Draft</option>
+            <option value="pending">Pending</option>
+            <option value="paid">Paid</option>
+            <option value="archived">Archived</option>
+          </Select>
         </div>
       </section>
 
@@ -70,30 +70,28 @@ export default function InvoiceForm() {
         <h3 className="text-xs font-bold text-[#1A998F] uppercase tracking-widest mb-3">Billed To</h3>
         <div className="flex flex-col gap-3">
           
-          <div className="flex flex-col gap-1">
-            <label className="text-xs font-semibold text-[#6B7280] uppercase tracking-wide">Select Existing Client</label>
-            <select
-              className="input-field mb-2"
-              onChange={(e) => {
-                const c = savedClients.find(client => client.id === e.target.value);
-                if (c) {
-                  updateClient({
-                    name: c.name || '',
-                    email: c.email || '',
-                    address: c.address || '',
-                    phone: c.phone || '',
-                    gstNumber: c.gstNumber || ''
-                  });
-                }
-              }}
-              defaultValue=""
-            >
-              <option value="" disabled>-- Select a client to auto-fill --</option>
-              {savedClients.map(c => (
-                <option key={c.id} value={c.id}>{c.name}</option>
-              ))}
-            </select>
-          </div>
+          <Select
+            label="Select Existing Client"
+            className="mb-2"
+            value=""
+            onChange={(e) => {
+              const c = savedClients.find(client => client.id === e.target.value);
+              if (c) {
+                updateClient({
+                  name: c.name || '',
+                  email: c.email || '',
+                  address: c.address || '',
+                  phone: c.phone || '',
+                  gstNumber: c.gstNumber || ''
+                });
+              }
+            }}
+          >
+            <option value="" disabled>-- Select a client to auto-fill --</option>
+            {savedClients.map(c => (
+              <option key={c.id} value={c.id}>{c.name}</option>
+            ))}
+          </Select>
 
           <div className="flex flex-col gap-1">
             <label className="text-xs font-semibold text-[#6B7280] uppercase tracking-wide">Client Name *</label>
@@ -200,28 +198,73 @@ export default function InvoiceForm() {
       <section>
         <div className="flex flex-col gap-3">
           <div className="flex flex-col gap-1">
-            <label className="text-xs font-semibold text-[#6B7280] uppercase tracking-wide">Payment Terms</label>
-            <select className="input-field" {...field('paymentTerms')}>
-              <option value="">Select terms...</option>
-              <option value="Due on Receipt">Due on Receipt</option>
-              <option value="Net 15">Net 15</option>
-              <option value="Net 30">Net 30</option>
-              <option value="Net 45">Net 45</option>
-              <option value="Net 60">Net 60</option>
-              <option value="50% Advance">50% Advance</option>
-            </select>
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-semibold text-[#6B7280] uppercase tracking-wide">Payment Terms</label>
+              <button 
+                type="button" 
+                onClick={() => setAiModal('terms')}
+                className="text-xs font-bold text-[#1A998F] hover:text-[#187F87] flex items-center gap-1"
+              >
+                <Sparkles size={12} /> Suggest with AI
+              </button>
+            </div>
+            {invoice.paymentTerms && !['Due on Receipt', 'Net 15', 'Net 30', 'Net 45', 'Net 60', '50% Advance'].includes(invoice.paymentTerms) ? (
+               <input className="input-field" {...field('paymentTerms')} />
+            ) : (
+              <Select {...field('paymentTerms')}>
+                <option value="">Select terms...</option>
+                <option value="Due on Receipt">Due on Receipt</option>
+                <option value="Net 15">Net 15</option>
+                <option value="Net 30">Net 30</option>
+                <option value="Net 45">Net 45</option>
+                <option value="Net 60">Net 60</option>
+                <option value="50% Advance">50% Advance</option>
+              </Select>
+            )}
           </div>
           <div className="flex flex-col gap-1">
-            <label className="text-xs font-semibold text-[#6B7280] uppercase tracking-wide">Notes</label>
-            <select className="input-field" {...field('notes')}>
-              <option value="">None</option>
-              <option value="Thank you for your business!">Thank you for your business!</option>
-              <option value="Payment is due by the specified due date.">Payment is due by the specified due date.</option>
-              <option value="Please contact us if you have any questions regarding this invoice.">Please contact us if you have any questions regarding this invoice.</option>
-            </select>
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-semibold text-[#6B7280] uppercase tracking-wide">Notes</label>
+              <button 
+                type="button" 
+                onClick={() => setAiModal('notes')}
+                className="text-xs font-bold text-[#1A998F] hover:text-[#187F87] flex items-center gap-1"
+              >
+                <Sparkles size={12} /> Generate with AI
+              </button>
+            </div>
+            {invoice.notes && !['Thank you for your business!', 'Payment is due by the specified due date.', 'Please contact us if you have any questions regarding this invoice.'].includes(invoice.notes) ? (
+              <textarea rows={2} className="input-field resize-none" {...field('notes')} />
+            ) : (
+              <Select {...field('notes')}>
+                <option value="">None</option>
+                <option value="Thank you for your business!">Thank you for your business!</option>
+                <option value="Payment is due by the specified due date.">Payment is due by the specified due date.</option>
+                <option value="Please contact us if you have any questions regarding this invoice.">Please contact us if you have any questions regarding this invoice.</option>
+              </Select>
+            )}
           </div>
         </div>
       </section>
+      <AIGeneratorModal
+        open={aiModal === 'terms'}
+        onClose={() => setAiModal(null)}
+        title="Suggest Payment Terms"
+        promptLabel="Analyzing client details and invoice total to suggest payment terms..."
+        contextData={invoice}
+        generatorFn={suggestTermsAI}
+        onUse={(terms) => updateInvoice({ paymentTerms: terms })}
+      />
+
+      <AIGeneratorModal
+        open={aiModal === 'notes'}
+        onClose={() => setAiModal(null)}
+        title="Generate Notes"
+        promptLabel="Creating a professional note for your invoice footer..."
+        contextData={invoice}
+        generatorFn={generateNotesAI}
+        onUse={(note) => updateInvoice({ notes: note })}
+      />
     </div>
   );
 }

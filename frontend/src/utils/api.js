@@ -1,12 +1,22 @@
 import axios from 'axios';
+import { auth } from '../firebase/config';
 
 const api = axios.create({ baseURL: '/api' });
 
-// Attach Gemini API key from localStorage on every AI request
-api.interceptors.request.use((config) => {
-  const geminiKey = localStorage.getItem('invoice_ai_gemini_key');
-  if (geminiKey) {
-    config.headers['x-gemini-api-key'] = geminiKey;
+// Attach Firebase Auth token or Mock token on every API request
+api.interceptors.request.use(async (config) => {
+  const user = auth?.currentUser;
+  if (user) {
+    const token = await user.getIdToken();
+    config.headers['Authorization'] = `Bearer ${token}`;
+  } else {
+    const mockUser = localStorage.getItem('invoice_ai_mock_user');
+    if (mockUser) {
+      try {
+        const parsed = JSON.parse(mockUser);
+        config.headers['Authorization'] = `Bearer mock_${parsed.uid}`;
+      } catch (e) {}
+    }
   }
   return config;
 });

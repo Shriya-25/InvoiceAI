@@ -1,23 +1,40 @@
-import { Trash2, Plus } from 'lucide-react';
+import { Trash2, Plus, Sparkles } from 'lucide-react';
+import { useState } from 'react';
 import { useInvoice } from '../../context/InvoiceContext';
 import { formatCurrency, getCurrencySymbol, CURRENCIES } from '../../utils/formatters';
 import { calcSubtotal, calcTax, calcDiscount, calcTotal } from '../../utils/invoiceHelpers';
+import { generateDescriptionAI } from '../../utils/api';
+import AIGeneratorModal from '../ui/AIGeneratorModal';
 
 export default function LineItemRow({ item }) {
   const { updateItem, removeItem, invoice } = useInvoice();
+  const [aiModalOpen, setAiModalOpen] = useState(false);
   const symbol = getCurrencySymbol(invoice.currency);
   const amount = (Number(item.quantity) || 0) * (Number(item.rate) || 0);
 
   return (
-    <div className="grid grid-cols-[1fr_70px_100px_100px_36px] gap-2 items-start py-2 border-b border-[#F3F4F6] last:border-b-0">
-      <input
-        type="text"
-        placeholder="Service description"
-        value={item.description}
-        onChange={e => updateItem(item.id, { description: e.target.value })}
-        className="input-field !py-2 text-sm"
-      />
-      <input
+    <>
+      <div className="grid grid-cols-[1fr_70px_100px_100px_36px] gap-2 items-start py-2 border-b border-[#F3F4F6] last:border-b-0">
+        <div className="relative group">
+          <input
+            type="text"
+            placeholder="Service description"
+            value={item.description}
+            onChange={e => updateItem(item.id, { description: e.target.value })}
+            className="input-field !py-2 text-sm w-full pr-8"
+          />
+          {item.description && (
+            <button
+              type="button"
+              onClick={() => setAiModalOpen(true)}
+              className="absolute right-2 top-1/2 -translate-y-1/2 text-[#1A998F] hover:text-[#187F87] opacity-0 group-hover:opacity-100 transition-opacity p-1"
+              title="Improve with AI"
+            >
+              <Sparkles size={14} />
+            </button>
+          )}
+        </div>
+        <input
         type="number"
         min="1"
         placeholder="Qty"
@@ -48,5 +65,16 @@ export default function LineItemRow({ item }) {
         <Trash2 size={15} />
       </button>
     </div>
+    
+    <AIGeneratorModal
+      open={aiModalOpen}
+      onClose={() => setAiModalOpen(false)}
+      title="Smart Description"
+      promptLabel="Converting your rough notes into a professional description..."
+      contextData={item.description}
+      generatorFn={generateDescriptionAI}
+      onUse={(newDesc) => updateItem(item.id, { description: newDesc })}
+    />
+    </>
   );
 }

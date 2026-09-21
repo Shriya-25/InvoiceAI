@@ -8,6 +8,7 @@ import AppLayout from '../components/layout/AppLayout';
 import Badge from '../components/ui/Badge';
 import EmptyState from '../components/ui/EmptyState';
 import Modal from '../components/ui/Modal';
+import { Select } from '../components/ui/Input';
 import { useAuth } from '../context/AuthContext';
 import {
   getInvoices, updateInvoice, deleteInvoice, createInvoice, logActivity
@@ -154,15 +155,15 @@ export default function InvoiceList() {
             </div>
             <div className="flex items-center gap-1.5">
               <Filter size={14} className="text-[#9CA3AF]" />
-              <select
-                className="input-field !py-2 !px-3 text-sm w-auto"
+              <Select
+                className="!py-2 !px-3 text-sm min-w-[120px]"
                 value={sortBy}
                 onChange={e => setSortBy(e.target.value)}
               >
                 <option value="date">Sort: Date</option>
                 <option value="amount">Sort: Amount</option>
                 <option value="client">Sort: Client</option>
-              </select>
+              </Select>
             </div>
           </div>
 
