@@ -2,12 +2,13 @@ import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
   FileText, Search, PlusCircle, MoreVertical, Copy, Archive,
-  CheckCircle, Trash2, Download, Edit2, Filter
+  CheckCircle, Trash2, Download, Edit2, Filter, Send
 } from 'lucide-react';
 import AppLayout from '../components/layout/AppLayout';
 import Badge from '../components/ui/Badge';
 import EmptyState from '../components/ui/EmptyState';
 import Modal from '../components/ui/Modal';
+import SendEmailModal from '../components/ui/SendEmailModal';
 import { Select } from '../components/ui/Input';
 import { useAuth } from '../context/AuthContext';
 import {
@@ -30,10 +31,15 @@ export default function InvoiceList() {
   const [sortBy, setSortBy] = useState('date');
   const [menuOpen, setMenuOpen] = useState(null);
   const [deleteModal, setDeleteModal] = useState(null);
+  const [sendModal, setSendModal] = useState(null);
+  const [profile, setProfile] = useState({});
 
   const load = () => {
     if (!user) return;
     getInvoices(user.uid).then(invs => { setInvoices(invs); setLoading(false); });
+    import('../firebase/firestore').then(({ getProfile }) => {
+      getProfile(user.uid).then(p => setProfile(p || {}));
+    });
   };
 
   useEffect(() => { load(); }, [user]);
@@ -188,8 +194,8 @@ export default function InvoiceList() {
           ) : (
             <>
               {/* Column headers */}
-              <div className="grid grid-cols-[1fr_140px_120px_110px_60px_48px] gap-4 px-5 py-2 bg-[#F9FAFB] border-b border-[#E5E7EB]">
-                {['Invoice / Client', 'Amount', 'Due Date', 'Status', 'Edit', ''].map((h, i) => (
+              <div className="grid grid-cols-[1fr_140px_120px_110px_60px_60px_48px] gap-4 px-5 py-2 bg-[#F9FAFB] border-b border-[#E5E7EB]">
+                {['Invoice / Client', 'Amount', 'Due Date', 'Status', 'Edit', 'Send', ''].map((h, i) => (
                   <span key={i} className="text-[10px] font-bold text-[#9CA3AF] uppercase tracking-wider">{h}</span>
                 ))}
               </div>
@@ -198,7 +204,7 @@ export default function InvoiceList() {
                 return (
                   <div
                     key={inv.id}
-                    className="grid grid-cols-[1fr_140px_120px_110px_60px_48px] gap-4 items-center px-5 py-3.5 border-b border-[#F3F4F6] last:border-0 hover:bg-[#FAFAFA] transition-colors group cursor-pointer"
+                    className="grid grid-cols-[1fr_140px_120px_110px_60px_60px_48px] gap-4 items-center px-5 py-3.5 border-b border-[#F3F4F6] last:border-0 hover:bg-[#FAFAFA] transition-colors group cursor-pointer"
                     onClick={() => navigate(`/invoices/${inv.id}?mode=view`)}
                   >
                     <div>
@@ -215,6 +221,15 @@ export default function InvoiceList() {
                         title="Edit Invoice"
                       >
                         <Edit2 size={16} />
+                      </button>
+                    </div>
+                    <div className="flex items-center" onClick={e => e.stopPropagation()}>
+                      <button
+                        onClick={() => setSendModal(inv)}
+                        className="p-1.5 rounded-lg hover:bg-[#E5E7EB] text-[#1A998F] transition-colors"
+                        title="Send via Email"
+                      >
+                        <Send size={16} />
                       </button>
                     </div>
                     <div className="relative" onClick={e => e.stopPropagation()}>
@@ -270,6 +285,16 @@ export default function InvoiceList() {
           </button>
         </div>
       </Modal>
+
+      {/* Send Email Modal */}
+      {sendModal && (
+        <SendEmailModal
+          open={!!sendModal}
+          onClose={() => setSendModal(null)}
+          invoice={sendModal}
+          profile={profile}
+        />
+      )}
     </AppLayout>
   );
 }
