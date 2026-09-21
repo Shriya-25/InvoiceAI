@@ -38,3 +38,6 @@ export const validateInvoiceAI = (invoice) =>
 
 export const generateEmailAI = (invoice) =>
   api.post('/ai/generate-email', { invoice }).then(r => r.data.data);
+
+export const sendEmail = (data) =>
+  api.post('/email/send', data).then(r => r.data);

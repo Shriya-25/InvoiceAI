@@ -5,6 +5,7 @@ import AppLayout from '../components/layout/AppLayout';
 import InvoiceForm from '../components/invoice/InvoiceForm';
 import InvoicePreview from '../components/invoice/InvoicePreview';
 import AIAssistantPanel from '../components/invoice/AIAssistantPanel';
+import SendEmailModal from '../components/ui/SendEmailModal';
 import { InvoiceProvider, useInvoice } from '../context/InvoiceContext';
 import { useAuth } from '../context/AuthContext';
 import { createInvoice, updateInvoice as updateInvoiceFS, getInvoice, getProfile, logActivity } from '../firebase/firestore';
@@ -66,6 +67,7 @@ function EditorContent({ mode, profile }) {
   const [exporting, setExporting] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
   const [showAI, setShowAI] = useState(false);
+  const [showEmailModal, setShowEmailModal] = useState(false);
 
   const handleAIGenerate = async (prompt) => {
     const data = await generateInvoiceAI(prompt);
@@ -172,7 +174,7 @@ function EditorContent({ mode, profile }) {
           {mode !== 'view' && (
             <button
               id="btn-send-invoice"
-              onClick={() => handleSave('pending')}
+              onClick={() => setShowEmailModal(true)}
               disabled={saving}
               className="btn-primary"
             >
@@ -213,6 +215,15 @@ function EditorContent({ mode, profile }) {
       )}
 
       {mode !== 'view' && <AIAssistantPanel open={showAI} onClose={() => setShowAI(false)} />}
+      
+      {showEmailModal && (
+        <SendEmailModal
+          open={showEmailModal}
+          onClose={() => setShowEmailModal(false)}
+          invoice={invoice}
+          profile={profile}
+        />
+      )}
     </div>
   );
 }
