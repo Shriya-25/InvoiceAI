@@ -94,8 +94,8 @@ export const signUpWithEmail = async (email, password, displayName, rememberMe =
 };
 
 export const logout = () => {
+  setMockUser(null);
   if (window.IS_MOCKED_FIREBASE) {
-    setMockUser(null);
     return Promise.resolve();
   }
   return signOut(auth);

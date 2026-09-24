@@ -6,16 +6,24 @@ const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(() => {
-    // Eagerly restore mock user on first render to avoid flash
-    const stored = localStorage.getItem('invoice_ai_mock_user');
-    return stored ? JSON.parse(stored) : null;
+    // Only restore mock user if mock mode is actually active
+    if (window.IS_MOCKED_FIREBASE) {
+      const stored = localStorage.getItem('invoice_ai_mock_user');
+      return stored ? JSON.parse(stored) : null;
+    }
+    return null;
   });
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // If a mock/skip user is already in localStorage, resolve immediately
-    const storedMock = localStorage.getItem('invoice_ai_mock_user');
-    if (storedMock || window.IS_MOCKED_FIREBASE) {
+    // Clean up stuck mock users if real Firebase is active
+    if (!window.IS_MOCKED_FIREBASE) {
+      localStorage.removeItem('invoice_ai_mock_user');
+    }
+
+    // If mock mode is active, resolve immediately
+    if (window.IS_MOCKED_FIREBASE) {
+      const storedMock = localStorage.getItem('invoice_ai_mock_user');
       const mockUser = storedMock ? JSON.parse(storedMock) : null;
       setUser(mockUser);
       setLoading(false);
@@ -33,11 +41,8 @@ export function AuthProvider({ children }) {
     let unsub = null;
     if (!window.IS_MOCKED_FIREBASE && auth) {
       unsub = onAuthStateChanged(auth, (firebaseUser) => {
-        // Don't overwrite mock session with Firebase null
-        if (!localStorage.getItem('invoice_ai_mock_user')) {
-          setUser(firebaseUser);
-          setLoading(false);
-        }
+        setUser(firebaseUser);
+        setLoading(false);
       });
     }
 
