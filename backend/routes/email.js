@@ -78,11 +78,13 @@ router.post('/send', async (req, res) => {
     const info = await t.sendMail(mailOptions);
     console.log('[Email] Success / Message sent: %s', info.messageId);
     
+    let previewUrl = null;
     if (!isSmtpConfigured) {
-      console.log('[Email] Preview URL: %s', nodemailer.getTestMessageUrl(info));
+      previewUrl = nodemailer.getTestMessageUrl(info);
+      console.log('[Email] Preview URL: %s', previewUrl);
     }
 
-    res.json({ success: true, messageId: info.messageId });
+    res.json({ success: true, messageId: info.messageId, previewUrl });
   } catch (error) {
     console.error('[Email] Error:', error.message || error);
     

@@ -65,8 +65,23 @@ export default function SendEmailModal({ open, onClose, invoice, profile }) {
         filename: `${invoice.invoiceNumber || 'invoice'}.pdf`
       };
 
-      await sendEmail(payload);
-      toast.success('Email sent successfully!');
+      const res = await sendEmail(payload);
+      if (res.previewUrl) {
+        toast.success(
+          (t) => (
+            <div className="flex flex-col gap-2">
+              <span className="font-semibold">Test Email Sent!</span>
+              <span className="text-xs text-gray-500">SMTP is not configured, so this is a test email.</span>
+              <a href={res.previewUrl} target="_blank" rel="noopener noreferrer" className="text-blue-500 underline text-sm">
+                Click here to view it
+              </a>
+            </div>
+          ),
+          { duration: 10000 }
+        );
+      } else {
+        toast.success('Email sent successfully!');
+      }
       onClose();
     } catch (error) {
       toast.error('Failed to send email. Ensure SMTP is configured on the backend.');
