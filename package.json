@@ -5,7 +5,9 @@
   "scripts": {
     "dev": "concurrently -n \"BACKEND,FRONTEND\" -c \"cyan,teal\" \"npm --prefix backend run dev\" \"npm --prefix frontend run dev\"",
     "dev:frontend": "npm --prefix frontend run dev",
-    "dev:backend": "npm --prefix backend run dev"
+    "dev:backend": "npm --prefix backend run dev",
+    "build": "npm --prefix frontend run build",
+    "postinstall": "npm --prefix frontend install && npm --prefix backend install"
   },
   "devDependencies": {
     "concurrently": "^8.2.2"
